@@ -1,0 +1,2074 @@
+{
+  "version": "2.6.2",
+  "summary": {
+    "title": "EU AI Act Governance Platform — Threat Model",
+    "owner": "Farhan Shahriyar",
+    "description": "An end-to-end AI governance and compliance automation platform \nthat classifies AI systems into EU AI Act risk tiers, generates \nDPIA reports, runs OWASP LLM Top 10 assessments, and deploys \na full DevSecOps pipeline on Azure using Terraform, Docker, and \nKubernetes. This threat model identifies security threats across \nall system components using the STRIDE methodology.",
+    "id": 0
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "High Level Architecture Threats",
+        "diagramType": "STRIDE",
+        "placeholder": "New STRIDE diagram description",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.6.2",
+        "cells": [
+          {
+            "position": {
+              "x": 40,
+              "y": 205
+            },
+            "size": {
+              "width": 300,
+              "height": 260
+            },
+            "attrs": {
+              "label": {
+                "text": "Internet Boundary"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "c685ed9b-52f4-41fc-b963-cc388a9a62d1",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Internet Boundary",
+              "description": "",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false,
+              "crossingFlows": [],
+              "containedElements": [
+                "38c87314-b98a-49f6-9b76-905d016484c9",
+                "ac170c61-2c34-4236-a315-9a3c32f279d6"
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 509.9999999999991,
+              "y": 10.00000000000017
+            },
+            "size": {
+              "width": 210,
+              "height": 660
+            },
+            "attrs": {
+              "label": {
+                "text": "Internal Network Boundary"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "4f377bc6-6d07-43d5-b352-b717ed4e53d3",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Internal Network Boundary",
+              "description": "",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false,
+              "crossingFlows": [
+                "1fcb2cd1-6428-410d-a9e0-ef602b635b12",
+                "5553fe27-d64d-4e60-8130-c74983dd43cc"
+              ],
+              "containedElements": [
+                "a3619712-ccd4-488a-8790-a992fe88691b",
+                "de3161e0-4b0c-4332-a50e-3a11f9728606",
+                "a7c1ae1e-c888-48af-a211-7c73af4053a6",
+                "3c8e3e64-edf6-4e0c-9fbf-91c89d64f0af",
+                "0773d5c3-7ee8-4ef5-a446-b332a16622d5",
+                "c500f3f9-7e39-4542-bb5a-ba5ddbcf9277"
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 751,
+              "y": 109.99999999999994
+            },
+            "size": {
+              "width": 220,
+              "height": 520
+            },
+            "attrs": {
+              "label": {
+                "text": "Data Layer Boundary"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "4d7dcecc-ebcf-4c51-bb3f-b28aa8c04f97",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Data Layer Boundary",
+              "description": "",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false,
+              "crossingFlows": [
+                "d574945e-47e9-44fb-9e21-491747390b43",
+                "6ecab578-c284-45f1-83ea-f3f0cdcfaf2c",
+                "b8e68244-b904-44f5-bab2-2162e699b4bd"
+              ],
+              "containedElements": [
+                "6d106623-2628-4ae9-95e5-e596859bcde2",
+                "bf7dd9e7-074c-48c8-a807-b45510061f2f",
+                "09ed853c-1ca0-4796-a190-28f04d21d3ed",
+                "b031f635-5482-4d97-a39c-5d28232a2868"
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 110,
+              "y": 260
+            },
+            "size": {
+              "width": 140,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Compliance Officer"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "8ece6a89-49ea-4ce5-97c2-8d74825e6a1b"
+                },
+                {
+                  "group": "right",
+                  "id": "66ea1452-141e-4854-a30b-0ed8b12ab17c"
+                },
+                {
+                  "group": "bottom",
+                  "id": "274eb839-56f9-4e8c-9839-c802145f58be"
+                },
+                {
+                  "group": "left",
+                  "id": "3b613f3e-4629-483d-8a27-e143c2356bfb"
+                }
+              ]
+            },
+            "id": "38c87314-b98a-49f6-9b76-905d016484c9",
+            "zIndex": 1,
+            "data": {
+              "type": "tm.Actor",
+              "name": "Compliance Officer",
+              "description": "",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "providesAuthentication": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 110,
+              "y": 366
+            },
+            "size": {
+              "width": 140,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "GitHub Actions Pipeline"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "8ece6a89-49ea-4ce5-97c2-8d74825e6a1b"
+                },
+                {
+                  "group": "right",
+                  "id": "66ea1452-141e-4854-a30b-0ed8b12ab17c"
+                },
+                {
+                  "group": "bottom",
+                  "id": "274eb839-56f9-4e8c-9839-c802145f58be"
+                },
+                {
+                  "group": "left",
+                  "id": "3b613f3e-4629-483d-8a27-e143c2356bfb"
+                }
+              ]
+            },
+            "id": "ac170c61-2c34-4236-a315-9a3c32f279d6",
+            "zIndex": 2,
+            "data": {
+              "type": "tm.Actor",
+              "name": "GitHub Actions Pipeline",
+              "description": "",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "providesAuthentication": false,
+              "threats": [
+                {
+                  "id": "cfcaf0dd-4916-4029-949e-8c673d39abe2",
+                  "title": "Tampering — Supply Chain Attack",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "An attacker compromises a third party GitHub Action used in the pipeline and injects malicious code that gets deployed to production",
+                  "mitigation": "All GitHub Actions pinned to specific commit SHA, not floating version tags. SAST and SCA scans run on every build. Dependency review enabled on repository.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 12,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 1,
+                "repudiation": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 585,
+              "y": 70
+            },
+            "size": {
+              "width": 60,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "API Gateway"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "9319aa57-f66c-4496-b16d-53766e205483"
+                },
+                {
+                  "group": "right",
+                  "id": "8bcf1f53-22a1-4a4e-a536-fab535c8d285"
+                },
+                {
+                  "group": "bottom",
+                  "id": "74867e9a-fdc8-4924-925c-6bf76794b641"
+                },
+                {
+                  "group": "left",
+                  "id": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+                }
+              ]
+            },
+            "id": "a3619712-ccd4-488a-8790-a992fe88691b",
+            "zIndex": 3,
+            "data": {
+              "type": "tm.Process",
+              "name": "API Gateway",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "f203a814-3552-446f-815a-1fee254879f0",
+                  "title": "Denial of Service — API Flooding",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Denial of service",
+                  "description": "An attacker sends thousands of requests per second to overwhelm the API Gateway and make the platform unavailable",
+                  "mitigation": "Rate limiting configured in Azure API Management. Kubernetes HPA automatically scales pods under high load.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 3,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 0,
+                "repudiation": 0,
+                "informationDisclosure": 0,
+                "denialOfService": 1,
+                "elevationOfPrivilege": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 585,
+              "y": 170
+            },
+            "size": {
+              "width": 60,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "EU AI Act Classifier"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "9319aa57-f66c-4496-b16d-53766e205483"
+                },
+                {
+                  "group": "right",
+                  "id": "8bcf1f53-22a1-4a4e-a536-fab535c8d285"
+                },
+                {
+                  "group": "bottom",
+                  "id": "74867e9a-fdc8-4924-925c-6bf76794b641"
+                },
+                {
+                  "group": "left",
+                  "id": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+                }
+              ]
+            },
+            "id": "de3161e0-4b0c-4332-a50e-3a11f9728606",
+            "zIndex": 4,
+            "data": {
+              "type": "tm.Process",
+              "name": "EU AI Act Classifier",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "b82f6c32-1862-4ede-b05e-af5b94795e20",
+                  "title": "Tampering — Classification Result Manipulation",
+                  "status": "Open",
+                  "severity": "Critical",
+                  "type": "Tampering",
+                  "description": "An attacker intercepts and modifies the classification result between the classifier and the PDF generator, changing a High risk tier to Minimal",
+                  "mitigation": "All internal service communication encrypted with TLS. Results signed before transmission.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 4,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 1,
+                "repudiation": 0,
+                "informationDisclosure": 0,
+                "denialOfService": 0,
+                "elevationOfPrivilege": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 585,
+              "y": 371
+            },
+            "size": {
+              "width": 60,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "OWASP LLM Checker"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "9319aa57-f66c-4496-b16d-53766e205483"
+                },
+                {
+                  "group": "right",
+                  "id": "8bcf1f53-22a1-4a4e-a536-fab535c8d285"
+                },
+                {
+                  "group": "bottom",
+                  "id": "74867e9a-fdc8-4924-925c-6bf76794b641"
+                },
+                {
+                  "group": "left",
+                  "id": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+                }
+              ]
+            },
+            "id": "a7c1ae1e-c888-48af-a211-7c73af4053a6",
+            "zIndex": 5,
+            "data": {
+              "type": "tm.Process",
+              "name": "OWASP LLM Checker",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "54b999c5-b5c7-4a5b-84d8-24b4b56d8d60",
+                  "title": "Tampering — Manipulated Assessment Results",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "An attacker manipulates OWASP LLM assessment results to hide critical vulnerabilities from the compliance report",
+                  "mitigation": "Results validated and signed before passing to PDF generator. Audit log records all assessment outputs.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 13,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 1,
+                "repudiation": 0,
+                "informationDisclosure": 0,
+                "denialOfService": 0,
+                "elevationOfPrivilege": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 585,
+              "y": 270
+            },
+            "size": {
+              "width": 60,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "DPIA Generator"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "9319aa57-f66c-4496-b16d-53766e205483"
+                },
+                {
+                  "group": "right",
+                  "id": "8bcf1f53-22a1-4a4e-a536-fab535c8d285"
+                },
+                {
+                  "group": "bottom",
+                  "id": "74867e9a-fdc8-4924-925c-6bf76794b641"
+                },
+                {
+                  "group": "left",
+                  "id": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+                }
+              ]
+            },
+            "id": "3c8e3e64-edf6-4e0c-9fbf-91c89d64f0af",
+            "zIndex": 6,
+            "data": {
+              "type": "tm.Process",
+              "name": "DPIA Generator",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "5087b4f7-a357-47a8-a8d4-704df1866a6a",
+                  "title": "Tampering — Prompt Injection Attack",
+                  "status": "Open",
+                  "severity": "Critical",
+                  "type": "Tampering",
+                  "description": "An attacker crafts a malicious prompt that manipulates the RAG assistant into ignoring its system instructions and revealing sensitive information or producing harmful outputs",
+                  "mitigation": "Input validation and sanitisation before passing to Azure OpenAI. LLM guardrails implemented. Output filtered before returning to user.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 5,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 1,
+                "repudiation": 0,
+                "informationDisclosure": 0,
+                "denialOfService": 0,
+                "elevationOfPrivilege": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 585,
+              "y": 476
+            },
+            "size": {
+              "width": 60,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "PDF Generator"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "9319aa57-f66c-4496-b16d-53766e205483"
+                },
+                {
+                  "group": "right",
+                  "id": "8bcf1f53-22a1-4a4e-a536-fab535c8d285"
+                },
+                {
+                  "group": "bottom",
+                  "id": "74867e9a-fdc8-4924-925c-6bf76794b641"
+                },
+                {
+                  "group": "left",
+                  "id": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+                }
+              ]
+            },
+            "id": "0773d5c3-7ee8-4ef5-a446-b332a16622d5",
+            "zIndex": 7,
+            "data": {
+              "type": "tm.Process",
+              "name": "PDF Generator",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "e82268b7-b383-44ec-9672-c764d81e60f3",
+                  "title": "Information Disclosure — Report Interception",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Information disclosure",
+                  "description": "A generated PDF compliance report is intercepted in transit before reaching the user\n",
+                  "mitigation": "All PDF transfers over TLS. Reports stored in private Azure Blob Storage with time-limited download links.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 14,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 0,
+                "repudiation": 0,
+                "informationDisclosure": 1,
+                "denialOfService": 0,
+                "elevationOfPrivilege": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 585,
+              "y": 580
+            },
+            "size": {
+              "width": 60,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "RAG Assistant"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "9319aa57-f66c-4496-b16d-53766e205483"
+                },
+                {
+                  "group": "right",
+                  "id": "8bcf1f53-22a1-4a4e-a536-fab535c8d285"
+                },
+                {
+                  "group": "bottom",
+                  "id": "74867e9a-fdc8-4924-925c-6bf76794b641"
+                },
+                {
+                  "group": "left",
+                  "id": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+                }
+              ]
+            },
+            "id": "c500f3f9-7e39-4542-bb5a-ba5ddbcf9277",
+            "zIndex": 8,
+            "data": {
+              "type": "tm.Process",
+              "name": "RAG Assistant",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "b617eb7d-6abe-4c73-b253-bb6dd7422d58",
+                  "title": "Tampering — Prompt Injection Attack",
+                  "status": "Open",
+                  "severity": "Critical",
+                  "type": "Tampering",
+                  "description": "An attacker crafts a malicious prompt that manipulates the RAG assistant into ignoring its system instructions and revealing sensitive information or producing harmful outputs",
+                  "mitigation": "Input validation and sanitisation before passing to Azure OpenAI. LLM guardrails implemented. Output filtered before returning to user.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 9,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 1,
+                "repudiation": 0,
+                "informationDisclosure": 0,
+                "denialOfService": 0,
+                "elevationOfPrivilege": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 796,
+              "y": 180
+            },
+            "size": {
+              "width": 120,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "PostgreSQL"
+              },
+              "topLine": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "3416f1e4-f8f4-4660-b8b8-19779786b4f3"
+                },
+                {
+                  "group": "right",
+                  "id": "7eba68d4-7217-43b4-8739-4b242289c7d0"
+                },
+                {
+                  "group": "bottom",
+                  "id": "b0511545-c67b-4384-8b48-c5e8c480c442"
+                },
+                {
+                  "group": "left",
+                  "id": "718570cc-0ad9-42dd-acb3-666e3b449860"
+                }
+              ]
+            },
+            "id": "6d106623-2628-4ae9-95e5-e596859bcde2",
+            "zIndex": 9,
+            "data": {
+              "type": "tm.Store",
+              "name": "PostgreSQL",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": [
+                {
+                  "id": "747848b9-9187-4466-8a76-4a18638f5f9b",
+                  "title": "Information Disclosure — Database Breach",
+                  "status": "Open",
+                  "severity": "Critical",
+                  "type": "Information disclosure",
+                  "description": "An attacker gains unauthorised access to the PostgreSQL database containing all assessment history and audit logs",
+                  "mitigation": "PostgreSQL deployed in private subnet with no public internet access. Connection requires service account credentials stored in Azure Key Vault. All data encrypted at rest.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 10,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "tampering": 0,
+                "repudiation": 0,
+                "informationDisclosure": 1,
+                "denialOfService": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 796,
+              "y": 293
+            },
+            "size": {
+              "width": 120,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "Azure Blob Storage"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "3416f1e4-f8f4-4660-b8b8-19779786b4f3"
+                },
+                {
+                  "group": "right",
+                  "id": "7eba68d4-7217-43b4-8739-4b242289c7d0"
+                },
+                {
+                  "group": "bottom",
+                  "id": "b0511545-c67b-4384-8b48-c5e8c480c442"
+                },
+                {
+                  "group": "left",
+                  "id": "718570cc-0ad9-42dd-acb3-666e3b449860"
+                }
+              ]
+            },
+            "id": "bf7dd9e7-074c-48c8-a807-b45510061f2f",
+            "zIndex": 10,
+            "data": {
+              "type": "tm.Store",
+              "name": "Azure Blob Storage",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "HTTPS Request",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "4f377bc6-6d07-43d5-b352-b717ed4e53d3"
+              ]
+            },
+            "labels": [
+              "HTTPS Request"
+            ],
+            "id": "1fcb2cd1-6428-410d-a9e0-ef602b635b12",
+            "source": {
+              "x": 250,
+              "y": 293
+            },
+            "target": {
+              "cell": "a3619712-ccd4-488a-8790-a992fe88691b",
+              "port": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+            },
+            "vertices": [
+              {
+                "x": 370,
+                "y": 80
+              },
+              {
+                "x": 470,
+                "y": 80
+              }
+            ]
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Assessment Data",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "4d7dcecc-ebcf-4c51-bb3f-b28aa8c04f97"
+              ]
+            },
+            "labels": [
+              "Assessment Data"
+            ],
+            "id": "d574945e-47e9-44fb-9e21-491747390b43",
+            "source": {
+              "x": 645,
+              "y": 200
+            },
+            "target": {
+              "cell": "6d106623-2628-4ae9-95e5-e596859bcde2",
+              "port": "3416f1e4-f8f4-4660-b8b8-19779786b4f3"
+            },
+            "vertices": [
+              {
+                "x": 790,
+                "y": 200
+              }
+            ]
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "PDF Report",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "4d7dcecc-ebcf-4c51-bb3f-b28aa8c04f97"
+              ]
+            },
+            "labels": [
+              "PDF Report"
+            ],
+            "id": "6ecab578-c284-45f1-83ea-f3f0cdcfaf2c",
+            "source": {
+              "x": 645,
+              "y": 500
+            },
+            "target": {
+              "cell": "bf7dd9e7-074c-48c8-a807-b45510061f2f",
+              "port": "718570cc-0ad9-42dd-acb3-666e3b449860"
+            },
+            "vertices": [
+              {
+                "x": 720,
+                "y": 600
+              }
+            ]
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Query Embeddings",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [
+                {
+                  "id": "d7a8e661-d2d4-47ca-a549-1771044e1665",
+                  "title": "Spoofing — Unauthenticated API Access",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Tampering",
+                  "description": "An attacker sends requests to the API Gateway pretending to be a legitimate user without valid credentials",
+                  "mitigation": "Azure API Management enforces JWT token validation on all incoming requests. Invalid tokens are rejected before reaching any microservice.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 1,
+                  "score": ""
+                }
+              ],
+              "trustBoundaryIds": [
+                "4d7dcecc-ebcf-4c51-bb3f-b28aa8c04f97"
+              ],
+              "threatFrequency": {
+                "tampering": 1,
+                "informationDisclosure": 0,
+                "denialOfService": 0
+              }
+            },
+            "labels": [
+              "Query Embeddings"
+            ],
+            "id": "b8e68244-b904-44f5-bab2-2162e699b4bd",
+            "source": {
+              "x": 645,
+              "y": 610
+            },
+            "target": {
+              "cell": "09ed853c-1ca0-4796-a190-28f04d21d3ed",
+              "port": "718570cc-0ad9-42dd-acb3-666e3b449860"
+            },
+            "vertices": [
+              {
+                "x": 670,
+                "y": 560
+              },
+              {
+                "x": 700,
+                "y": 490
+              },
+              {
+                "x": 740,
+                "y": 435
+              }
+            ]
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Deployment Request",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "4f377bc6-6d07-43d5-b352-b717ed4e53d3"
+              ]
+            },
+            "labels": [
+              "Deployment Request"
+            ],
+            "id": "5553fe27-d64d-4e60-8130-c74983dd43cc",
+            "source": {
+              "x": 250,
+              "y": 405
+            },
+            "target": {
+              "cell": "a3619712-ccd4-488a-8790-a992fe88691b",
+              "port": "5da1ed01-fa8d-40ea-a387-1686bddc5bb1"
+            }
+          },
+          {
+            "position": {
+              "x": 796,
+              "y": 405
+            },
+            "size": {
+              "width": 120,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "Vector Database"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "3416f1e4-f8f4-4660-b8b8-19779786b4f3"
+                },
+                {
+                  "group": "right",
+                  "id": "7eba68d4-7217-43b4-8739-4b242289c7d0"
+                },
+                {
+                  "group": "bottom",
+                  "id": "b0511545-c67b-4384-8b48-c5e8c480c442"
+                },
+                {
+                  "group": "left",
+                  "id": "718570cc-0ad9-42dd-acb3-666e3b449860"
+                }
+              ]
+            },
+            "id": "09ed853c-1ca0-4796-a190-28f04d21d3ed",
+            "zIndex": 11,
+            "data": {
+              "type": "tm.Store",
+              "name": "Vector Database",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 796,
+              "y": 520
+            },
+            "size": {
+              "width": 120,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "Azure Key Vault"
+              },
+              "topLine": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "3416f1e4-f8f4-4660-b8b8-19779786b4f3"
+                },
+                {
+                  "group": "right",
+                  "id": "7eba68d4-7217-43b4-8739-4b242289c7d0"
+                },
+                {
+                  "group": "bottom",
+                  "id": "b0511545-c67b-4384-8b48-c5e8c480c442"
+                },
+                {
+                  "group": "left",
+                  "id": "718570cc-0ad9-42dd-acb3-666e3b449860"
+                }
+              ]
+            },
+            "id": "b031f635-5482-4d97-a39c-5d28232a2868",
+            "zIndex": 12,
+            "data": {
+              "type": "tm.Store",
+              "name": "Azure Key Vault",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": [
+                {
+                  "id": "690932e3-d109-4c64-b203-17b8cbeed445",
+                  "title": "Elevation of Privilege — Secret Theft",
+                  "status": "Open",
+                  "severity": "Critical",
+                  "type": "Information disclosure",
+                  "description": "An attacker gains access to Azure Key Vault and steals API keys, database passwords, and encryption keys — giving them full access to all platform components\n",
+                  "mitigation": "Azure Key Vault access controlled exclusively via Managed Identity. No passwords stored anywhere. All access logged and audited. RBAC enforced with principle of least privilege.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 11,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "tampering": 0,
+                "repudiation": 0,
+                "informationDisclosure": 1,
+                "denialOfService": 0
+              }
+            }
+          }
+        ],
+        "description": "STRIDE threat model covering all system components and trust boundaries"
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "Farhan Shahriyar",
+    "threatTop": 14
+  }
+}
