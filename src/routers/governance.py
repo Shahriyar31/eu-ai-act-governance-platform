@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from src.database.connection import get_db
 from src.models.schemas import (
     ClassificationRequest,
     ClassificationResponse,
@@ -7,24 +9,53 @@ from src.models.schemas import (
     OWASPRequest,
     OWASPResponse,
     FullAssessmentRequest,
-    FullAssessmentResponse
+    FullAssessmentResponse,
+    NVDCheckRequest,
+    NVDCheckResponse,
+    ATLASCheckRequest,
+    ATLASCheckResponse
 )
-from src.governance.nvd_checker import check_technologies_nvd
-from src.models.schemas import NVDCheckRequest, NVDCheckResponse
 from src.governance.classifier import classify_ai_system
 from src.governance.dpia import generate_dpia
 from src.governance.owasp import check_owasp_llm
 from src.governance.nist import map_to_nist
 from src.governance.pdf_generator import generate_pdf_report
+from src.governance.nvd_checker import check_technologies_nvd
+from src.governance.atlas_checker import assess_atlas_risks
 import uuid
 
 
 router = APIRouter(prefix="/api/v1", tags=["Governance"])
 
 
+@router.post("/atlas-check", response_model=ATLASCheckResponse)
+async def atlas_check_endpoint(request: ATLASCheckRequest):
+    try:
+        assessment = await assess_atlas_risks(
+            system_name=request.system_name,
+            uses_llm=request.uses_llm,
+            accepts_user_input=request.accepts_user_input,
+            has_external_api=request.has_external_api,
+            processes_personal_data=request.processes_personal_data,
+            automated_decision=request.automated_decision
+        )
+        return ATLASCheckResponse(
+            system_name=assessment.system_name,
+            techniques_found=len(assessment.relevant_techniques),
+            tactics_covered=assessment.tactics_covered,
+            risk_summary=assessment.risk_summary,
+            recommendations=assessment.recommendations,
+            technique_details=[
+                f"{t.technique_id} — {t.name}: {t.description}"
+                for t in assessment.relevant_techniques
+            ]
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/nvd-check", response_model=NVDCheckResponse)
 async def nvd_check_endpoint(request: NVDCheckRequest):
-    # Real-time CVE check via NVD API
     try:
         assessment = await check_technologies_nvd(
             request.system_name,
@@ -44,10 +75,9 @@ async def nvd_check_endpoint(request: NVDCheckRequest):
 
 
 @router.post("/classify", response_model=ClassificationResponse)
-async def classify_endpoint(request: ClassificationRequest):
-    # EU AI Act risk classification
+async def classify_endpoint(request: ClassificationRequest, db: Session = Depends(get_db)):
     try:
-        result = classify_ai_system(request)
+        result = classify_ai_system(request, db)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -55,7 +85,6 @@ async def classify_endpoint(request: ClassificationRequest):
 
 @router.post("/dpia", response_model=DPIAResponse)
 async def dpia_endpoint(request: DPIARequest):
-    # DPIA generation
     try:
         result = generate_dpia(request)
         return result
@@ -65,7 +94,6 @@ async def dpia_endpoint(request: DPIARequest):
 
 @router.post("/owasp-check", response_model=OWASPResponse)
 async def owasp_endpoint(request: OWASPRequest):
-    # OWASP LLM Top 10 assessment
     try:
         result = check_owasp_llm(request)
         return result
@@ -74,10 +102,8 @@ async def owasp_endpoint(request: OWASPRequest):
 
 
 @router.post("/assess", response_model=FullAssessmentResponse)
-async def full_assessment_endpoint(request: FullAssessmentRequest):
-    # Full pipeline — runs all components and generates PDF
+async def full_assessment_endpoint(request: FullAssessmentRequest, db: Session = Depends(get_db)):
     try:
-        # Step 1 — EU AI Act classification
         class_req = ClassificationRequest(
             system_name=request.system_name,
             description=request.description,
@@ -86,9 +112,8 @@ async def full_assessment_endpoint(request: FullAssessmentRequest):
             processes_personal_data=request.processes_personal_data,
             interacts_with_humans=request.interacts_with_humans
         )
-        classification = classify_ai_system(class_req)
+        classification = classify_ai_system(class_req, db)
 
-        # Step 2 — DPIA generation
         dpia_req = DPIARequest(
             system_name=request.system_name,
             description=request.description,
@@ -100,7 +125,6 @@ async def full_assessment_endpoint(request: FullAssessmentRequest):
         )
         dpia = generate_dpia(dpia_req)
 
-        # Step 3 — OWASP LLM Top 10 check
         owasp_req = OWASPRequest(
             system_name=request.system_name,
             description=request.description,
@@ -111,10 +135,8 @@ async def full_assessment_endpoint(request: FullAssessmentRequest):
         )
         owasp = check_owasp_llm(owasp_req)
 
-        # Step 4 — NIST AI RMF mapping
         nist = map_to_nist(request.system_name, classification, owasp)
 
-        # Step 5 — PDF report generation
         report_id = str(uuid.uuid4())
         filepath = generate_pdf_report(
             request.system_name,

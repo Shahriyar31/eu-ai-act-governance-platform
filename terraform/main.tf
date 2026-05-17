@@ -133,3 +133,41 @@ resource "azurerm_container_registry" "main" {
     managed_by  = "terraform"
   }
 }
+
+
+resource "azurerm_postgresql_flexible_server" "main" {
+  name                   = "psql-eu-ai-gov"
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = "francecentral"
+  version                = "16"
+  administrator_login    = "pgadmin"
+  administrator_password = var.db_admin_password
+  zone                   = "1"
+
+  storage_mb   = 32768
+  storage_tier = "P4"
+
+  sku_name = "B_Standard_B1ms"
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure" {
+  name             = "allow-azure-services"
+  server_id        = azurerm_postgresql_flexible_server.main.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
+}
+
+resource "azurerm_postgresql_flexible_server_database" "main" {
+  name      = "euaigovernance"
+  server_id = azurerm_postgresql_flexible_server.main.id
+  collation = "en_US.utf8"
+  charset   = "utf8"
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "developer" {
+  count            = var.developer_ip != "" ? 1 : 0
+  name             = "allow-developer"
+  server_id        = azurerm_postgresql_flexible_server.main.id
+  start_ip_address = var.developer_ip
+  end_ip_address   = var.developer_ip
+}

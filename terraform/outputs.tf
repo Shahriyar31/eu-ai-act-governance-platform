@@ -53,3 +53,13 @@ output "container_registry_name" {
   description = "Name of the container registry"
   value       = azurerm_container_registry.main.name
 }
+
+output "postgresql_server_fqdn" {
+  description = "PostgreSQL server fully qualified domain name"
+  value       = azurerm_postgresql_flexible_server.main.fqdn
+}
+
+output "postgresql_database_name" {
+  description = "PostgreSQL database name"
+  value       = azurerm_postgresql_flexible_server_database.main.name
+}

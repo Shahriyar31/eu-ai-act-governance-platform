@@ -42,3 +42,15 @@ variable "container_registry_name" {
   type        = string
   default     = "euaigovernanceacr"
 }
+
+variable "db_admin_password" {
+  description = "Administrator password for PostgreSQL server"
+  type        = string
+  sensitive   = true
+}
+
+variable "developer_ip" {
+  description = "Local developer IP for PostgreSQL access during development"
+  type        = string
+  default     = ""
+}

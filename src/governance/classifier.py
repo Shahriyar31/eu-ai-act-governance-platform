@@ -1,79 +1,96 @@
-from src.models.schemas import ClassificationRequest, ClassificationResponse, SectorEnum, RiskTierEnum
+from sqlalchemy.orm import Session
+from src.models.schemas import ClassificationRequest, ClassificationResponse, RiskTierEnum, SectorEnum
+from src.database.models import ClassificationRule
 
-HIGH_RISK_SECTORS = [
-    SectorEnum.healthcare,
-    SectorEnum.employment,
-    SectorEnum.education,
-    SectorEnum.law_enforcement,
-    SectorEnum.border_control,
-    SectorEnum.critical_infrastructure,
-    SectorEnum.justice,
-    SectorEnum.finance
-]
-
-UNACCEPTABLE_KEYWORDS = [
-    "social scoring",
-    "mass surveillance",
-    "biometric surveillance",
-    "subliminal manipulation",
-    "exploit vulnerability",
-    "real-time biometric"
-]
-
-def classify_ai_system(request: ClassificationRequest) -> ClassificationResponse:
+def classify_ai_system(request: ClassificationRequest, db: Session) -> ClassificationResponse:
     description_lower = request.description.lower()
 
-    for keyword in UNACCEPTABLE_KEYWORDS:
-        if keyword in description_lower:
+    rules = db.query(ClassificationRule).filter(
+        ClassificationRule.is_active == True
+    ).order_by(ClassificationRule.priority.asc()).all()
+
+    for rule in rules:
+        if _rule_matches(rule, request, description_lower):
+            risk_tier = RiskTierEnum(rule.risk_tier)
+
+            if risk_tier == RiskTierEnum.unacceptable:
+                dpia_required = False
+            elif risk_tier == RiskTierEnum.minimal:
+                dpia_required = False
+            else:
+                dpia_required = request.processes_personal_data
+
+            justification = rule.justification_template
+            if risk_tier == RiskTierEnum.high:
+                if request.automated_decision:
+                    justification += " Automated decision-making without human review increases risk."
+                else:
+                    justification += " Human oversight is present which is a positive control."
+
+            obligations = _get_obligations(risk_tier, request)
+
             return ClassificationResponse(
                 system_name=request.system_name,
-                risk_tier=RiskTierEnum.unacceptable,
-                justification=f"System description contains indicators of prohibited AI: '{keyword}'. This system is banned under EU AI Act Article 5.",
-                obligations=[
-                    "This AI system is prohibited under EU AI Act Article 5",
-                    "Immediate cessation of development and deployment required",
-                    "Legal review recommended"
-                ],
-                dpia_required=False
+                risk_tier=risk_tier,
+                justification=justification,
+                obligations=obligations,
+                dpia_required=dpia_required
             )
-
-    if request.sector in HIGH_RISK_SECTORS:
-        obligations = _get_high_risk_obligations(request)
-        return ClassificationResponse(
-            system_name=request.system_name,
-            risk_tier=RiskTierEnum.high,
-            justification=f"System operates in the '{request.sector.value}' sector which is listed under Annex III of the EU AI Act as High Risk. {'Automated decision-making without human review increases risk.' if request.automated_decision else 'Human oversight is present which is a positive control.'}",
-            obligations=obligations,
-            dpia_required=request.processes_personal_data
-        )
-
-    if request.interacts_with_humans:
-        return ClassificationResponse(
-            system_name=request.system_name,
-            risk_tier=RiskTierEnum.limited,
-            justification="System interacts directly with humans. Transparency obligations apply under EU AI Act Article 50.",
-            obligations=[
-                "Disclose AI identity to users before interaction begins",
-                "Label any AI-generated content clearly",
-                "Maintain transparency about system capabilities and limitations"
-            ],
-            dpia_required=request.processes_personal_data
-        )
 
     return ClassificationResponse(
         system_name=request.system_name,
         risk_tier=RiskTierEnum.minimal,
-        justification="System does not fall under any high-risk category defined in EU AI Act Annex III and does not interact directly with humans in a way that triggers transparency obligations.",
-        obligations=[
-            "No mandatory EU AI Act obligations apply",
-            "Best practice: maintain internal documentation",
-            "Best practice: conduct voluntary impact assessments"
-        ],
+        justification="System does not fall under any high-risk category defined in EU AI Act Annex III.",
+        obligations=["No mandatory EU AI Act obligations apply"],
         dpia_required=False
     )
 
 
-def _get_high_risk_obligations(request: ClassificationRequest) -> list:
+def _rule_matches(rule: ClassificationRule, request: ClassificationRequest, description_lower: str) -> bool:
+    if rule.keyword is not None:
+        return rule.keyword in description_lower
+
+    if rule.sector is not None:
+        if request.sector.value != rule.sector:
+            return False
+
+    if rule.interacts_with_humans is not None:
+        if request.interacts_with_humans != rule.interacts_with_humans:
+            return False
+
+    if rule.automated_decision is not None:
+        if request.automated_decision != rule.automated_decision:
+            return False
+
+    if rule.processes_personal_data is not None:
+        if request.processes_personal_data != rule.processes_personal_data:
+            return False
+
+    return True
+
+
+def _get_obligations(risk_tier: RiskTierEnum, request: ClassificationRequest) -> list:
+    if risk_tier == RiskTierEnum.unacceptable:
+        return [
+            "This AI system is prohibited under EU AI Act Article 5",
+            "Immediate cessation of development and deployment required",
+            "Legal review recommended"
+        ]
+
+    if risk_tier == RiskTierEnum.limited:
+        return [
+            "Disclose AI identity to users before interaction begins",
+            "Label any AI-generated content clearly",
+            "Maintain transparency about system capabilities and limitations"
+        ]
+
+    if risk_tier == RiskTierEnum.minimal:
+        return [
+            "No mandatory EU AI Act obligations apply",
+            "Best practice: maintain internal documentation",
+            "Best practice: conduct voluntary impact assessments"
+        ]
+
     obligations = [
         "Implement a risk management system (Article 9)",
         "Establish data governance practices (Article 10)",
