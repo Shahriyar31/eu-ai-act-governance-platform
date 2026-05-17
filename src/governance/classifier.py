@@ -1,18 +1,16 @@
-from src.models.schemas import ClassificationRequest, ClassificationResponse
+from src.models.schemas import ClassificationRequest, ClassificationResponse, SectorEnum, RiskTierEnum
 
-# Annex III High Risk sectors from EU AI Act
 HIGH_RISK_SECTORS = [
-    "healthcare",
-    "employment",
-    "education",
-    "law_enforcement",
-    "border_control",
-    "critical_infrastructure",
-    "justice",
-    "finance"
+    SectorEnum.healthcare,
+    SectorEnum.employment,
+    SectorEnum.education,
+    SectorEnum.law_enforcement,
+    SectorEnum.border_control,
+    SectorEnum.critical_infrastructure,
+    SectorEnum.justice,
+    SectorEnum.finance
 ]
 
-# Keywords that indicate Unacceptable Risk
 UNACCEPTABLE_KEYWORDS = [
     "social scoring",
     "mass surveillance",
@@ -23,14 +21,13 @@ UNACCEPTABLE_KEYWORDS = [
 ]
 
 def classify_ai_system(request: ClassificationRequest) -> ClassificationResponse:
-    # Check Unacceptable Risk first
     description_lower = request.description.lower()
 
     for keyword in UNACCEPTABLE_KEYWORDS:
         if keyword in description_lower:
             return ClassificationResponse(
                 system_name=request.system_name,
-                risk_tier="unacceptable",
+                risk_tier=RiskTierEnum.unacceptable,
                 justification=f"System description contains indicators of prohibited AI: '{keyword}'. This system is banned under EU AI Act Article 5.",
                 obligations=[
                     "This AI system is prohibited under EU AI Act Article 5",
@@ -40,23 +37,21 @@ def classify_ai_system(request: ClassificationRequest) -> ClassificationResponse
                 dpia_required=False
             )
 
-    # Check High Risk
-    if request.sector.lower() in HIGH_RISK_SECTORS:
+    if request.sector in HIGH_RISK_SECTORS:
         obligations = _get_high_risk_obligations(request)
         return ClassificationResponse(
             system_name=request.system_name,
-            risk_tier="high",
-            justification=f"System operates in the '{request.sector}' sector which is listed under Annex III of the EU AI Act as High Risk. {'Automated decision-making without human review increases risk.' if request.automated_decision else 'Human oversight is present which is a positive control.'}",
+            risk_tier=RiskTierEnum.high,
+            justification=f"System operates in the '{request.sector.value}' sector which is listed under Annex III of the EU AI Act as High Risk. {'Automated decision-making without human review increases risk.' if request.automated_decision else 'Human oversight is present which is a positive control.'}",
             obligations=obligations,
             dpia_required=request.processes_personal_data
         )
 
-    # Check Limited Risk
     if request.interacts_with_humans:
         return ClassificationResponse(
             system_name=request.system_name,
-            risk_tier="limited",
-            justification="System interacts directly with humans. Transparency obligations apply under EU AI Act Article 50. Users must be informed they are interacting with an AI system.",
+            risk_tier=RiskTierEnum.limited,
+            justification="System interacts directly with humans. Transparency obligations apply under EU AI Act Article 50.",
             obligations=[
                 "Disclose AI identity to users before interaction begins",
                 "Label any AI-generated content clearly",
@@ -65,10 +60,9 @@ def classify_ai_system(request: ClassificationRequest) -> ClassificationResponse
             dpia_required=request.processes_personal_data
         )
 
-    # Default — Minimal Risk
     return ClassificationResponse(
         system_name=request.system_name,
-        risk_tier="minimal",
+        risk_tier=RiskTierEnum.minimal,
         justification="System does not fall under any high-risk category defined in EU AI Act Annex III and does not interact directly with humans in a way that triggers transparency obligations.",
         obligations=[
             "No mandatory EU AI Act obligations apply",
@@ -80,7 +74,6 @@ def classify_ai_system(request: ClassificationRequest) -> ClassificationResponse
 
 
 def _get_high_risk_obligations(request: ClassificationRequest) -> list:
-    # Base obligations for all High Risk systems
     obligations = [
         "Implement a risk management system (Article 9)",
         "Establish data governance practices (Article 10)",
@@ -92,25 +85,34 @@ def _get_high_risk_obligations(request: ClassificationRequest) -> list:
         "Register system in EU AI Act database before deployment (Article 16)"
     ]
 
-    # Add sector-specific obligations
-    if request.sector.lower() == "healthcare":
+    if request.sector == SectorEnum.healthcare:
         obligations.append("Comply with EU Medical Device Regulation (MDR) if applicable")
         obligations.append("Ensure clinical validation before deployment")
 
-    if request.sector.lower() == "employment":
+    if request.sector == SectorEnum.employment:
         obligations.append("Inform workers and their representatives about AI use")
         obligations.append("Ensure non-discrimination in automated hiring decisions")
 
-    if request.sector.lower() == "law_enforcement":
+    if request.sector == SectorEnum.law_enforcement:
         obligations.append("Obtain prior judicial or administrative authorisation")
         obligations.append("Maintain detailed logs of every use")
 
-    # Add DPIA obligation if personal data is processed
+    if request.sector == SectorEnum.border_control:
+        obligations.append("Ensure compliance with EU asylum and migration law")
+        obligations.append("Prohibit use for decisions affecting right to asylum")
+
+    if request.sector == SectorEnum.education:
+        obligations.append("Ensure assessment tools are validated for fairness across student groups")
+        obligations.append("Provide human review of AI-generated academic assessments")
+
+    if request.sector == SectorEnum.finance:
+        obligations.append("Comply with EU financial services regulations alongside AI Act")
+        obligations.append("Ensure explainability of credit or insurance decisions")
+
     if request.processes_personal_data:
         obligations.append("Conduct Data Protection Impact Assessment (GDPR Article 35)")
         obligations.append("Appoint Data Protection Officer if not already in place")
 
-    # Add obligation if no human oversight
     if request.automated_decision:
         obligations.append("Implement mandatory human review before decisions take effect")
         obligations.append("Provide mechanism for individuals to contest automated decisions")
