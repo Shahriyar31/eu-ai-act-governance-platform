@@ -219,7 +219,6 @@ __marimo__/
 
 # Terraform sensitive files
 terraform/.terraform/
-terraform/.terraform.lock.hcl
 terraform/terraform.tfvars
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
