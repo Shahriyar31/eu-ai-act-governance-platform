@@ -1,8 +1,7 @@
-# ============================================================
 # VARIABLES
 # Configurable values for the infrastructure
 # Change these values to deploy to different environments
-# ============================================================
+
 
 variable "subscription_id" {
   description = "The Azure subscription ID where resources will be created"
