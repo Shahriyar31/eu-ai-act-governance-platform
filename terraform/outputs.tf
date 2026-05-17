@@ -1,8 +1,7 @@
-# ============================================================
 # OUTPUTS
 # Information displayed after terraform apply completes
 # These values are needed to configure other parts of the system
-# ============================================================
+
 
 output "resource_group_name" {
   description = "Name of the created resource group"
