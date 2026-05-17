@@ -42,3 +42,14 @@ output "key_vault_id" {
   description = "Full resource ID of the Key Vault — used for RBAC assignments"
   value       = azurerm_key_vault.main.id
 }
+
+
+output "container_registry_login_server" {
+  description = "Login server URL for the container registry — used by Docker to push and pull images"
+  value       = azurerm_container_registry.main.login_server
+}
+
+output "container_registry_name" {
+  description = "Name of the container registry"
+  value       = azurerm_container_registry.main.name
+}

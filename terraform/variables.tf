@@ -37,3 +37,8 @@ variable "key_vault_name" {
   type        = string
   default     = "kv-eu-ai-gov"
 }
+variable "container_registry_name" {
+  description = "Name of the Azure Container Registry. Must be globally unique, alphanumeric only, 5-50 characters"
+  type        = string
+  default     = "euaigovernanceacr"
+}

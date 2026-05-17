@@ -114,3 +114,22 @@ resource "azurerm_key_vault" "main" {
     managed_by  = "terraform"
   }
 }
+
+
+# Azure Container Registry
+# Private registry for storing Docker images
+# Kubernetes pulls images from here to run application containers
+
+resource "azurerm_container_registry" "main" {
+  name                = var.container_registry_name
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  sku                 = "Basic"
+  admin_enabled       = false
+
+  tags = {
+    project     = "eu-ai-act-governance"
+    environment = var.environment
+    managed_by  = "terraform"
+  }
+}
