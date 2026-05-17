@@ -61,8 +61,8 @@ compliance systematically. This platform aims to change that.
 | Architecture Design | ✅ Complete |
 | Threat Modelling | ✅ Complete |
 | Technology Decision Records | ✅ Complete |
-| Sprint 1 — Infrastructure | 🔄 Starting |
-| Sprint 2 — DevSecOps Pipeline | ⏳ Pending |
+| Sprint 1 — Infrastructure | ✅ Complete |
+| Sprint 2 — DevSecOps Pipeline | 🔄 Starting |
 | Sprint 3 — Governance Engine | ⏳ Pending |
 | Sprint 4 — AI Integration | ⏳ Pending |
 | Sprint 5 — Kubernetes & Monitoring | ⏳ Pending |
