@@ -22,8 +22,8 @@ from src.governance.nist import map_to_nist
 from src.governance.pdf_generator import generate_pdf_report
 from src.governance.nvd_checker import check_technologies_nvd
 from src.governance.atlas_checker import assess_atlas_risks
+from src.database.models import AssessmentHistory
 import uuid
-
 
 router = APIRouter(prefix="/api/v1", tags=["Governance"])
 
@@ -78,6 +78,15 @@ async def nvd_check_endpoint(request: NVDCheckRequest):
 async def classify_endpoint(request: ClassificationRequest, db: Session = Depends(get_db)):
     try:
         result = classify_ai_system(request, db)
+        history = AssessmentHistory(
+            system_name=result.system_name,
+            sector=request.sector.value,
+            risk_tier=result.risk_tier.value,
+            dpia_required=result.dpia_required,
+            justification=result.justification
+        )
+        db.add(history)
+        db.commit()
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -162,3 +171,22 @@ async def full_assessment_endpoint(request: FullAssessmentRequest, db: Session =
 @router.get("/reports/{report_id}")
 async def get_report(report_id: str):
     return {"message": f"Report {report_id} — file serving will be implemented in Sprint 5"}
+
+
+@router.get("/history")
+def get_history(db: Session = Depends(get_db)):
+    records = db.query(AssessmentHistory).order_by(
+        AssessmentHistory.assessed_at.desc()
+    ).limit(50).all()
+    return [
+        {
+            "id": r.id,
+            "system_name": r.system_name,
+            "sector": r.sector,
+            "risk_tier": r.risk_tier,
+            "dpia_required": r.dpia_required,
+            "justification": r.justification,
+            "assessed_at": r.assessed_at.isoformat()
+        }
+        for r in records
+    ]

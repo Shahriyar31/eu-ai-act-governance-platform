@@ -3,6 +3,7 @@ from urllib.parse import quote_plus
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
+
 load_dotenv()
 
 DB_PASSWORD = quote_plus(os.getenv('DB_PASSWORD', ''))

@@ -26,4 +26,7 @@ export const updateRule = (id, data) =>
 export const deactivateRule = (id) =>
   api.delete(`/admin/rules/${id}`)
 
+export const getHistory = () =>
+  api.get('/api/v1/history')
+
 export default api

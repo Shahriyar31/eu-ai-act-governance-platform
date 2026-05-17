@@ -17,3 +17,15 @@ class ClassificationRule(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class AssessmentHistory(Base):
+    __tablename__ = "assessment_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    system_name = Column(String, nullable=False)
+    sector = Column(String, nullable=False)
+    risk_tier = Column(String, nullable=False)
+    dpia_required = Column(Boolean, nullable=False)
+    justification = Column(Text, nullable=False)
+    assessed_at = Column(DateTime(timezone=True), server_default=func.now())

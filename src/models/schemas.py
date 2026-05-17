@@ -101,3 +101,22 @@ class NVDCheckResponse(BaseModel):
     medium_count: int
     overall_risk: str
     recommendations: List[str]
+
+
+class ATLASCheckRequest(BaseModel):
+    system_name: str
+    uses_llm: bool
+    accepts_user_input: bool
+    has_external_api: bool
+    processes_personal_data: bool
+    automated_decision: bool
+
+class ATLASCheckResponse(BaseModel):
+    system_name: str
+    techniques_found: int
+    tactics_covered: List[str]
+    risk_summary: str
+    recommendations: List[str]
+    technique_details: List[str]
+
+    
