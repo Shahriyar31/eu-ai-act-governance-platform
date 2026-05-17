@@ -12,9 +12,9 @@ sqlalchemy==2.0.36
 psycopg2-binary==2.9.10
 
 # AI and RAG
-langchain==0.3.81
+langchain==0.3.30
+langchain-core==0.3.85
 langchain-openai==0.2.14
-openai==1.54.0
 
 # PDF generation
 reportlab==4.2.5
