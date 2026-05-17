@@ -85,3 +85,19 @@ class FullAssessmentResponse(BaseModel):
     owasp: OWASPResponse
     report_id: str
     report_download_url: str
+
+class NVDCheckRequest(BaseModel):
+    system_name: str
+    technologies: List[str] = Field(
+        ...,
+        description="List of technologies used — e.g. ['tensorflow 2.10', 'pytorch 1.12']"
+    )
+
+class NVDCheckResponse(BaseModel):
+    system_name: str
+    technologies_checked: List[str]
+    critical_count: int
+    high_count: int
+    medium_count: int
+    overall_risk: str
+    recommendations: List[str]
