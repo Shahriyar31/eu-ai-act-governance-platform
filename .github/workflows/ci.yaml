@@ -111,13 +111,8 @@ jobs:
 
       - name: Scan image with Trivy
         run: |
-          trivy image \
-           --exit-code 1 \
-           --severity CRITICAL \
-           --ignore-unfixed \
-           --format json \
-           --output trivy-report.json \ 
-           eu-ai-governance:${{ github.sha }}
+          IMAGE="eu-ai-governance:${{ github.sha }}"
+          trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed --format json --output trivy-report.json "$IMAGE"
 
       - name: Upload Trivy report
         uses: actions/upload-artifact@v4
