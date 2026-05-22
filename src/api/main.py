@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,7 +8,6 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 # Import counters from dedicated metrics module — not defined here anymore
 from src.metrics import assessments_total, risk_tier_total
-
 from src.routers.governance import router as governance_router
 from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
@@ -40,7 +39,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "EU AI Act Governance Platform",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
