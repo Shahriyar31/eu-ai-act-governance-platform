@@ -63,3 +63,15 @@ output "postgresql_database_name" {
   description = "PostgreSQL database name"
   value       = azurerm_postgresql_flexible_server_database.main.name
 }
+
+
+output "aks_cluster_name" {
+  description = "AKS cluster name"
+  value       = azurerm_kubernetes_cluster.main.name
+}
+
+output "aks_kube_config" {
+  description = "AKS kubeconfig"
+  value       = azurerm_kubernetes_cluster.main.kube_config_raw
+  sensitive   = true
+}

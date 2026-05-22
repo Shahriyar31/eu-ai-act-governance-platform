@@ -1,13 +1,18 @@
 from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from src.routers.governance import router as governance_router
 from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
 from src.ai.rag_engine import initialise_knowledge_base
+from src.database.init_db import init_db
 
 @asynccontextmanager
 async def lifespan(app):
+    init_db()
     initialise_knowledge_base()
     yield
 
@@ -30,11 +35,26 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@app.get("/")
-def root():
-    return {
-        "message": "EU AI Act Governance Platform API",
-        "docs": "/docs",
-        "health": "/health",
-        "assess": "/api/v1/assess"
-    }
+FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.get("/")
+    def serve_frontend():
+        return FileResponse(FRONTEND_DIST / "index.html")
+
+    @app.get("/{full_path:path}")
+    def serve_spa(full_path: str):
+        file_path = FRONTEND_DIST / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(FRONTEND_DIST / "index.html")
+else:
+    @app.get("/")
+    def root():
+        return {
+            "message": "EU AI Act Governance Platform API",
+            "docs": "/docs",
+            "health": "/health"
+        }

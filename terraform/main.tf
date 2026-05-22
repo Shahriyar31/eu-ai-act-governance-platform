@@ -171,3 +171,61 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "developer" {
   start_ip_address = var.developer_ip
   end_ip_address   = var.developer_ip
 }
+
+resource "azurerm_virtual_network" "main" {
+  name                = "vnet-eu-ai-governance"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  address_space       = ["10.0.0.0/8"]
+}
+
+resource "azurerm_subnet" "public" {
+  name                 = "subnet-public"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.1.0.0/16"]
+}
+
+resource "azurerm_subnet" "private" {
+  name                 = "subnet-private"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.2.0.0/16"]
+}
+
+resource "azurerm_subnet" "data" {
+  name                 = "subnet-data"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.3.0.0/16"]
+}
+
+resource "azurerm_kubernetes_cluster" "main" {
+  name                = "aks-eu-ai-governance"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  dns_prefix          = "euaigovernance"
+  kubernetes_version  = "1.35.4"
+
+  default_node_pool {
+    name           = "default"
+    node_count     = 2
+    vm_size        = "Standard_D2ps_v6"
+    vnet_subnet_id = azurerm_subnet.private.id
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  network_profile {
+    network_plugin    = "azure"
+    load_balancer_sku = "standard"
+  }
+}
+
+resource "azurerm_role_assignment" "aks_vnet" {
+  scope                = azurerm_virtual_network.main.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.main.identity[0].principal_id
+}

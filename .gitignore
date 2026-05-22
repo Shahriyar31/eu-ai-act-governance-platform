@@ -225,3 +225,8 @@ terraform/terraform.tfstate.backup
 *.tfstate
 *.tfstate.backup
 .terraform/.env
+
+
+# k8s
+
+secret.yaml
