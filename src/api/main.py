@@ -14,9 +14,30 @@ from src.routers.ai import router as ai_router
 from src.routers.auth import router as auth_router
 from src.database.init_db import init_db
 
+import logging
+import sys
+from pythonjsonlogger import jsonlogger
+
+def setup_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    handler = logging.StreamHandler(sys.stdout)
+    
+    formatter = jsonlogger.JsonFormatter(
+        fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%SZ"
+    )
+    handler.setFormatter(formatter)
+    logger.handlers = [handler]
+    return logging.getLogger(__name__)
+
+logger = setup_logging()
+
 @asynccontextmanager
 async def lifespan(app):
     init_db()
+    logger.info("Application started", extra={"service": "eu-ai-governance"})
     yield
 
 app = FastAPI(
@@ -36,6 +57,7 @@ app.include_router(auth_router)
 
 @app.get("/health")
 def health_check():
+    logger.info("Health check requested")
     return {
         "status": "healthy",
         "service": "EU AI Act Governance Platform",
