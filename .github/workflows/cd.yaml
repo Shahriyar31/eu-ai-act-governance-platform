@@ -1,29 +1,33 @@
-name: CD — Deploy to Azure AKS
+name: CD — Deploy to Azure Container Apps
 
 # ─────────────────────────────────────────────────────────────
-# 🏭 THE FEYNMAN ANALOGY: The Car Delivery Truck
+# 🏭 THE FEYNMAN ANALOGY: The Pop-Up Restaurant
 #
-# The CI pipeline (ci.yaml) is your Quality Control Inspector.
-# It checks the car (Docker image) is safe, then parks it in
-# the Warehouse (Azure Container Registry / ACR).
+# AKS is like building a permanent restaurant with full staff,
+# kitchen, tables — expensive and always running.
 #
-# THIS pipeline is the Delivery Truck.
-# It only leaves the warehouse AFTER the CI Inspector gives
-# the green light (needs: [ci] below). It then drives the
-# approved car to the Showroom (AKS) and tells the Showroom
-# manager to swap out the old display car with the new one —
-# with zero downtime using Kubernetes rolling updates.
+# Azure Container Apps is like a pop-up restaurant:
+# - It spins up when customers arrive (requests come in)
+# - It scales DOWN to zero when no one is there (you pay nothing!)
+# - Azure manages all the plumbing (load balancer, TLS, scaling)
+# - Perfect for a student account with quota limits!
+#
+# This pipeline:
+# 1. Waits for the CI Quality Inspector to give the green light
+# 2. Logs into Azure
+# 3. Creates the Container App Environment if it doesn't exist
+# 4. Creates OR updates the Container App with the new image
+# 5. Prints the live public URL where your app is accessible!
 # ─────────────────────────────────────────────────────────────
 
 on:
-  # Trigger automatically after CI pipeline completes successfully on main
+  # Auto-trigger after CI pipeline succeeds on main
   workflow_run:
     workflows: ["DevSecOps Security Pipeline"]
     types: [completed]
     branches: [main]
 
-  # Also allow manual deployment from GitHub Actions UI
-  # Useful for hotfixes or emergency rollbacks
+  # Manual trigger — useful for redeployments or rollbacks
   workflow_dispatch:
     inputs:
       image_tag:
@@ -32,175 +36,185 @@ on:
         default: 'latest'
 
 env:
-  ACR_LOGIN_SERVER: euaigovernanceacr.azurecr.io
   ACR_NAME: euaigovernanceacr
-  AKS_CLUSTER_NAME: aks-eu-ai-governance
+  ACR_LOGIN_SERVER: euaigovernanceacr.azurecr.io
   RESOURCE_GROUP: rg-eu-ai-governance
-  K8S_NAMESPACE: default
-  DEPLOYMENT_NAME: eu-ai-governance
-  CONTAINER_NAME: api
+  LOCATION: germanywestcentral
+  # Container Apps resource names
+  CONTAINER_APP_ENV_NAME: cae-eu-ai-governance
+  CONTAINER_APP_NAME: ca-eu-ai-governance
+  # Your PostgreSQL server FQDN (from Terraform output)
+  DB_HOST: psql-eu-ai-gov.postgres.database.azure.com
 
 jobs:
   deploy:
-    name: 🚀 Deploy to AKS
+    name: 🚀 Deploy to Azure Container Apps
     runs-on: ubuntu-latest
 
     # ─────────────────────────────────────────────────────────
-    # CRITICAL SAFETY GATE:
-    # Only run this job if the CI pipeline that triggered us
-    # actually PASSED. If CI failed (security scan found a
-    # critical vulnerability), we do NOT deploy broken or
-    # unsafe code to production. Ever.
+    # SAFETY GATE: Only deploy if CI passed.
+    # If CI failed (security issues found), we stop here.
     # ─────────────────────────────────────────────────────────
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
 
-    # Explicit permissions: least-privilege principle
-    # Only request what this job actually needs
     permissions:
-      contents: read       # Read the repo
-      id-token: write      # Required for Azure OIDC login (more secure than secret passwords)
+      contents: read
+      id-token: write
 
     steps:
-      # ────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────────
       # STEP 1: Get the code
-      # ────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────────
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      # ────────────────────────────────────────────────────────
+      # ──────────────────────────────────────────────────────
       # STEP 2: Authenticate to Azure
-      #
-      # Feynman Analogy: Show your badge at the factory gate.
-      # We use a GitHub Secret (AZURE_CREDENTIALS) that contains
-      # a Service Principal — a special robot user that only has
-      # permission to deploy to this specific AKS cluster.
-      # ────────────────────────────────────────────────────────
+      # Uses the AZURE_CREDENTIALS secret you already have!
+      # ──────────────────────────────────────────────────────
       - name: 🔐 Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # ────────────────────────────────────────────────────────
-      # STEP 3: Connect kubectl to your AKS cluster
+      # ──────────────────────────────────────────────────────
+      # STEP 3: Decide which image tag to deploy
       #
-      # Feynman Analogy: Get the Showroom address and keys.
-      # kubectl is the remote control for Kubernetes. This step
-      # fetches the cluster's access credentials and saves them
-      # so all subsequent kubectl commands know WHERE to send
-      # their instructions.
-      # ────────────────────────────────────────────────────────
-      - name: ☸️ Connect kubectl to AKS cluster
-        uses: azure/aks-set-context@v4
-        with:
-          resource-group: ${{ env.RESOURCE_GROUP }}
-          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
-
-      # ────────────────────────────────────────────────────────
-      # STEP 4: Determine which image tag to deploy
-      #
-      # If triggered by CI pipeline → use the exact commit SHA
-      # (e.g. euaigovernanceacr.azurecr.io/eu-ai-governance:abc1234)
-      # If triggered manually → use the manually provided tag
-      # This ensures we always know EXACTLY what code is running
-      # in production — no ambiguity with "latest".
-      # ────────────────────────────────────────────────────────
-      - name: 🏷️ Resolve deployment image tag
-        id: resolve_tag
+      # Triggered by CI → use the exact commit SHA for traceability
+      # Triggered manually → use whatever the user typed (default: latest)
+      # ──────────────────────────────────────────────────────
+      - name: 🏷️ Resolve image tag
+        id: tag
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             TAG="${{ github.event.inputs.image_tag }}"
           else
-            # Use the SHA of the commit that triggered the upstream CI run
             TAG="${{ github.event.workflow_run.head_sha }}"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Deploying image tag: $TAG"
+          echo "Deploying: ${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:$TAG"
 
-      # ────────────────────────────────────────────────────────
-      # STEP 5: Roll out the new image to AKS
+      # ──────────────────────────────────────────────────────
+      # STEP 4: Get ACR credentials so Container Apps can
+      #         pull our Docker image from the private registry.
       #
-      # Feynman Analogy: The delivery truck pulls up to the
-      # showroom and swaps the cars one at a time.
-      #
-      # `kubectl set image` tells Kubernetes:
-      # "For the Deployment named 'eu-ai-governance', swap the
-      # container called 'api' to use this new Docker image."
-      #
-      # Kubernetes then performs a ROLLING UPDATE:
-      # - Starts a new pod (container) with the new image
-      # - Waits for it to pass its health check (readinessProbe)
-      # - Only then terminates one of the old pods
-      # - Repeats until all replicas are updated
-      # → ZERO DOWNTIME for real users!
-      # ────────────────────────────────────────────────────────
-      - name: 🔄 Roll out new image to AKS (zero-downtime)
+      # Feynman: Give the pop-up restaurant the warehouse key
+      # so they can go pick up the food (Docker image).
+      # ──────────────────────────────────────────────────────
+      - name: 🔑 Enable ACR admin and get credentials
+        id: acr
         run: |
-          IMAGE="${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ steps.resolve_tag.outputs.tag }}"
-          echo "Rolling out: $IMAGE"
-          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
-            ${{ env.CONTAINER_NAME }}=$IMAGE \
-            --namespace=${{ env.K8S_NAMESPACE }}
+          az acr update --name ${{ env.ACR_NAME }} --admin-enabled true
+          ACR_USERNAME=$(az acr credential show \
+            --name ${{ env.ACR_NAME }} \
+            --query username -o tsv)
+          ACR_PASSWORD=$(az acr credential show \
+            --name ${{ env.ACR_NAME }} \
+            --query "passwords[0].value" -o tsv)
+          echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
+          # Mask the password so it never appears in logs
+          echo "::add-mask::$ACR_PASSWORD"
+          echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
 
-      # ────────────────────────────────────────────────────────
-      # STEP 6: Wait and verify the rollout succeeded
+      # ──────────────────────────────────────────────────────
+      # STEP 5: Create Container Apps Environment if needed
       #
-      # Feynman Analogy: The delivery driver waits and watches
-      # to make sure every new car drives properly off the lot
-      # before driving away. If a car fails its test drive
-      # (health check), Kubernetes AUTOMATICALLY rolls back to
-      # the previous version. This step blocks the pipeline
-      # until all pods are healthy or times out after 5 min.
-      # ────────────────────────────────────────────────────────
-      - name: ✅ Verify rollout health (5 min timeout)
+      # The Environment is the secure network boundary that
+      # wraps your Container Apps — like the building that
+      # hosts multiple pop-up restaurant stalls.
+      # Only needs to be created ONCE. After that this step
+      # is skipped automatically (idempotent).
+      # ──────────────────────────────────────────────────────
+      - name: 🏗️ Create Container Apps Environment (if not exists)
         run: |
-          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
-            --namespace=${{ env.K8S_NAMESPACE }} \
-            --timeout=300s
+          if az containerapp env show \
+            --name ${{ env.CONTAINER_APP_ENV_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --output none 2>/dev/null; then
+            echo "✅ Environment already exists — skipping creation."
+          else
+            echo "🔨 Creating Container Apps Environment..."
+            az containerapp env create \
+              --name ${{ env.CONTAINER_APP_ENV_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --location ${{ env.LOCATION }}
+            echo "✅ Environment created."
+          fi
 
-      # ────────────────────────────────────────────────────────
-      # STEP 7: Print deployment summary
+      # ──────────────────────────────────────────────────────
+      # STEP 6: Create or Update the Container App
       #
-      # Shows the live running pods so you can confirm in the
-      # GitHub Actions log exactly what is running in production.
-      # ────────────────────────────────────────────────────────
-      - name: 📋 Print live deployment status
+      # First push → CREATES the app with all settings
+      # All subsequent pushes → UPDATES only the image tag
+      #
+      # Feynman: First time = open the pop-up stall.
+      #          Every push after = swap the menu for the day.
+      # ──────────────────────────────────────────────────────
+      - name: 🐳 Create or Update Container App
         run: |
+          IMAGE="${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ steps.tag.outputs.tag }}"
+
+          if az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --output none 2>/dev/null; then
+
+            echo "🔄 Container App exists — updating image to: $IMAGE"
+            az containerapp update \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image "$IMAGE"
+
+          else
+            echo "🆕 Container App not found — creating from scratch..."
+            az containerapp create \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APP_ENV_NAME }} \
+              --image "$IMAGE" \
+              --registry-server ${{ env.ACR_LOGIN_SERVER }} \
+              --registry-username "${{ steps.acr.outputs.username }}" \
+              --registry-password "${{ steps.acr.outputs.password }}" \
+              --target-port 8000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 3 \
+              --cpu 0.5 \
+              --memory 1.0Gi \
+              --env-vars \
+                DB_HOST="${{ env.DB_HOST }}" \
+                DB_USER="pgadmin" \
+                DB_NAME="euaigovernance" \
+                DB_PORT="5432" \
+                DB_PASSWORD=secretref:db-password \
+                JWT_SECRET=secretref:jwt-secret \
+                GROQ_API_KEY=secretref:groq-api-key \
+              --secrets \
+                db-password="${{ secrets.DB_PASSWORD }}" \
+                jwt-secret="${{ secrets.JWT_SECRET }}" \
+                groq-api-key="${{ secrets.GROQ_API_KEY }}"
+            echo "✅ Container App created."
+          fi
+
+      # ──────────────────────────────────────────────────────
+      # STEP 7: Print the live public URL
+      #
+      # Azure Container Apps automatically provisions a public
+      # HTTPS URL with a free TLS certificate. This step prints
+      # it so you can click it straight from the GitHub Actions log!
+      # ──────────────────────────────────────────────────────
+      - name: 🌐 Print live application URL
+        run: |
+          FQDN=$(az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            --output tsv)
           echo "============================================"
-          echo "  DEPLOYMENT COMPLETE — LIVE POD STATUS"
+          echo "  ✅ DEPLOYMENT COMPLETE!"
+          echo "  🌐 Live URL: https://$FQDN"
+          echo "  📄 Swagger:  https://$FQDN/api/v1/docs"
+          echo "  📊 V2 Docs:  https://$FQDN/api/v2/docs"
           echo "============================================"
-          kubectl get pods \
-            --namespace=${{ env.K8S_NAMESPACE }} \
-            --selector=app=${{ env.DEPLOYMENT_NAME }} \
-            -o wide
-          echo ""
-          echo "Active image:"
-          kubectl get deployment/${{ env.DEPLOYMENT_NAME }} \
-            --namespace=${{ env.K8S_NAMESPACE }} \
-            -o jsonpath='{.spec.template.spec.containers[0].image}'
-          echo ""
-          echo "============================================"
-
-      # ────────────────────────────────────────────────────────
-      # STEP 8 (SAFETY NET): Auto-rollback on failure
-      #
-      # Feynman Analogy: If the new car breaks down in the lot,
-      # the manager immediately puts the previous safe car back
-      # on display and calls the engineers.
-      #
-      # `if: failure()` means this step ONLY runs if step 5 or
-      # step 6 above failed. It uses `kubectl rollout undo`
-      # to instantly revert the deployment to the previous
-      # working image — no manual action needed!
-      # ────────────────────────────────────────────────────────
-      - name: 🔁 Auto-rollback on deployment failure
-        if: failure()
-        run: |
-          echo "⚠️  Deployment failed! Initiating automatic rollback..."
-          kubectl rollout undo deployment/${{ env.DEPLOYMENT_NAME }} \
-            --namespace=${{ env.K8S_NAMESPACE }}
-          echo "✅ Rollback complete. Previous version restored."
-          kubectl get pods \
-            --namespace=${{ env.K8S_NAMESPACE }} \
-            --selector=app=${{ env.DEPLOYMENT_NAME }}
