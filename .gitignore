@@ -236,3 +236,8 @@ keys/
 
 # PDF Reports
 *.pdfsrc/api/main.py.bak
+node_modules/
+*.bak
+german_report.pdf
+y
+package-lock.json

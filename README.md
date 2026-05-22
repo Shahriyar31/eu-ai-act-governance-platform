@@ -2,198 +2,246 @@
 
 <div align="center">
 
-![Platform Logo](https://img.shields.io/badge/EU_AI_Act-Governance_Platform-003399?style=for-the-badge&logo=europeanunion&logoColor=FFCC00)
+![Platform](https://img.shields.io/badge/EU_AI_Act-Governance_Platform-003399?style=for-the-badge&logo=europeanunion&logoColor=FFCC00)
 
-*An open-source enterprise platform that automates AI governance and compliance for organisations deploying AI systems under the EU AI Act (Regulation EU 2024/1689), GDPR, and NIST AI RMF.*
+**An open-source platform that automates AI compliance for the EU AI Act (Regulation EU 2024/1689), GDPR, and NIST AI RMF.**
+
+[**Live Demo →**](https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io) · [Documentation](docs/) · [Report Bug](https://github.com/Shahriyar31/eu-ai-act-governance-platform/issues)
 
 ---
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
+[![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white)](https://www.terraform.io)
-[![Azure AKS](https://img.shields.io/badge/Azure_AKS-0089D6?style=flat-square&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/en-us/products/kubernetes-service)
+[![Azure](https://img.shields.io/badge/Azure_Container_Apps-0089D6?style=flat-square&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/en-us/products/container-apps)
 [![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white)](https://prometheus.io)
 [![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)](https://grafana.com)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/features/actions)
+[![MIT License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 </div>
 
 ---
 
-## 🔍 The Problem
+## The Problem
 
-Organisations deploying Artificial Intelligence systems within the European single market face significant regulatory hurdles under the **EU AI Act**. Compliance assessment is historically manual, slow, fragmented, and prone to human error, creating a massive bottleneck for companies (especially SMEs) seeking to deploy AI safely and legally.
+Organisations deploying AI systems inside the EU face a hard compliance deadline. The EU AI Act requires risk classification, documentation, and impact assessments before deployment — but the process is manual, slow, and expensive. For most teams, compliance is an afterthought bolted on at the end.
 
-This platform bridges that gap by **automating and standardising AI compliance** into a unified, high-performance DevSecOps framework.
-
----
-
-## 🚀 Key Platform Features
-
-* **EU AI Act Classifier**: Automatically classifies AI systems into risk tiers (*Unacceptable / High / Limited / Minimal*) based on technical characteristics, utilizing official article cross-references.
-* **GDPR DPIA Generator**: Automatically drafts pre-filled Data Protection Impact Assessments aligned with **GDPR Article 35** for systems processing personal data.
-* **Security & Vulnerability Scanners**:
-  * Evaluates LLM-based systems against the **OWASP LLM Top 10** risks.
-  * Cross-checks software bills-of-materials (SBOM) against the National Vulnerability Database (**NVD**) and **MITRE ATLAS** frameworks.
-* **Observability Dashboard**: Built-in Prometheus and Grafana panels displaying real-time compliance trends, system health, request rates, latencies, and risk tier distributions.
-* **RAG Compliance Assistant**: Chat assistant powered by Azure OpenAI and LangChain, enabling developers to ask complex legal compliance questions directly from the codebase.
-* **Enterprise DevSecOps Pipeline**: Secure, containerized pipeline enforcing security scans (SAST, SCA, container scanning, and DAST) on every build push.
+This platform makes compliance a first-class engineering concern: automated, auditable, and integrated directly into the development pipeline.
 
 ---
 
-## 🔒 Phase 6 Enterprise Security Hardening
+## What It Does
 
-Our latest sprint introduced critical banking-grade compliance verification, API scalability, and localized legal capabilities:
+Submit an AI system's description and technical characteristics. The platform returns a full compliance report in seconds.
 
-### 1. Cryptographically Signed Audit Ledger
-Every compliance assessment (`/classify`, `/dpia`, `/owasp-check`, `/assess-and-download`) computes a **SHA-256 block hash** containing its payload parameters combined sequentially with the hash of the previous transaction.
-* **Digital Signatures**: The server dynamically signs each block hash using a **2048-bit RSA Private Key** under the **RS256 (PSS-padded)** cryptosystem.
-* **Tamper Verification**: The `/api/v1/verify-ledger` endpoint sequentially re-computes the hashes and validates signatures against the public key. Any database alteration, deletion, or insertion instantly breaks the signature chain, pointing out the exact corrupted row!
-* **Docker Keyring Volume**: The RSA keypair is securely mounted on the host machine (`./keys`) to prevent key loss or signature invalidation during container upgrades or image rebuilds.
-
-### 2. Isolated API Versioning & Swagger Docs
-Designed as a scalable micro-gateway, the FastAPI service maintains isolated OpenAPI routing tables to ensure backward compatibility:
-* **Legacy V1 (Docs: `/api/v1/docs`)**: Houses original classification models, OWASP check engines, and GDPR processors.
-* **Modernised V2 (Docs: `/api/v2/docs`)**: Integrates the modernized **`intended_purpose`** parameters and advanced Article 6 / Annex III classifications stamped under `EU AI Act 2024 (Reg. EU 2024/1689)`.
-* **Universal Instrumentator**: Prometheus performance monitoring extends natively across both mounted sub-applications.
-
-### 3. Dynamic On-The-Fly Translation (Multilingual PDFs)
-The full compliance certificate generator now accepts optional `language` request attributes:
-* **English (`en`) / German (`de`) / French (`fr`) / Spanish (`es`)**
-* Transcribes structural headers, risk levels, data subject classifications, OWASP checklists, and priority action lists into native European languages to directly satisfy regional supervisory bodies (like CNIL, AEPD, or BaFin).
-
----
-
-## ⚙️ Technology Stack
-
-| Layer | Tools & Technologies |
+| Feature | What it automates |
 |---|---|
-| **Backend API** | Python 3.11, FastAPI, Pydantic, SQLAlchemy, Uvicorn |
-| **Cryptography** | RSA-2048 (RS256 PSS), Cryptography (PyCA), SHA-256 Chaining |
-| **Artificial Intelligence** | Azure OpenAI, LangChain, RAG Knowledge Base, FastEmbed |
-| **Database** | PostgreSQL (Local / Azure Database for PostgreSQL) |
-| **Observability** | Prometheus, Grafana, Prometheus FastAPI Instrumentator |
-| **Infrastructure-as-Code** | Terraform, Azure Provider |
-| **Containerization** | Docker, Kubernetes, AKS (Azure Kubernetes Service), ACR |
-| **Continuous Integration** | GitHub Actions, Semgrep (SAST), Bandit (SAST), Syft (SCA), Trivy |
+| **EU AI Act Risk Classifier** | Classifies AI systems into Unacceptable / High / Limited / Minimal risk tiers with article-level justification |
+| **GDPR DPIA Generator** | Drafts Data Protection Impact Assessments aligned with GDPR Article 35 |
+| **OWASP LLM Top 10 Checker** | Evaluates LLM-based systems against the 10 most critical LLM security risks |
+| **NIST AI RMF Mapper** | Maps system characteristics to NIST AI Risk Management Framework controls |
+| **NVD Vulnerability Scanner** | Cross-checks software dependencies against the National Vulnerability Database |
+| **MITRE ATLAS Threat Assessment** | Identifies adversarial ML threats relevant to the system's architecture |
+| **PDF Report Generator** | Exports a complete compliance certificate covering all above assessments |
+| **RAG Compliance Assistant** | Answers EU AI Act questions grounded in the regulation text via LangChain + Groq |
 
 ---
 
-## 📈 Project Status & Roadmap
+## Architecture
 
-The platform is designed and constructed in organized, sprint-based phases.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Internet Boundary                         │
+│                                                             │
+│   Browser / API Client                                      │
+│        │                                                    │
+│        ▼                                                    │
+│   Azure Container Apps (HTTPS, TLS termination)             │
+│   ┌────────────────────────────────────────────────────┐   │
+│   │  React Frontend (Vite)                             │   │
+│   │  FastAPI Backend (Python 3.11)                     │   │
+│   │    ├── /api/v1/classify      EU AI Act classifier  │   │
+│   │    ├── /api/v1/dpia          DPIA generator        │   │
+│   │    ├── /api/v1/owasp-check   OWASP LLM scanner     │   │
+│   │    ├── /api/v1/nvd-check     NVD vulnerability scan │   │
+│   │    ├── /api/v1/atlas-check   MITRE ATLAS threats   │   │
+│   │    ├── /api/v1/assess-and-download  Full PDF report │   │
+│   │    ├── /api/v1/ai/chat       RAG compliance chat   │   │
+│   │    └── /metrics              Prometheus scrape     │   │
+│   └────────────────────────────────────────────────────┘   │
+│                                                             │
+│   ┌──────────────┐    ┌──────────────────────────────────┐ │
+│   │  Prometheus  │───▶│  Grafana Observability Dashboard  │ │
+│   │  (scrapes    │    │  - API health & uptime            │ │
+│   │   /metrics)  │    │  - Request rate & latency (RED)   │ │
+│   └──────────────┘    │  - Compliance assessment counters │ │
+│                       └──────────────────────────────────┘ │
+│                                                             │
+│   Azure Database for PostgreSQL                             │
+│   Azure Key Vault (secrets)                                 │
+│   Azure Container Registry (image storage)                  │
+└─────────────────────────────────────────────────────────────┘
+```
 
-| Phase / Sprint | Focus Area | Status |
-|---|---|---|
-| **Phase 0** | Requirements, Architecture, STRIDE Threat Modeling | ✅ Complete |
-| **Sprint 1** | Cloud Infrastructure (Terraform & Azure Setup) | ✅ Complete |
-| **Sprint 2** | DevSecOps Secure CI/CD Pipelines | ✅ Complete |
-| **Sprint 3** | Compliance Governance & Classification Engine | ✅ Complete |
-| **Sprint 4** | AI Integrations (RAG Knowledge Assistant) | ✅ Complete |
-| **Sprint 5** | Kubernetes Deployments & Grafana Observability | ✅ Complete |
-| **Sprint 6** | Polish, Audits & Multi-language Reporting | ✅ Complete |
-
-### Completed Milestones
-- [x] EU AI Act risk classification engine (V1 & V2 isolated schemas)
-- [x] Cryptographically signed SHA-256 / RSA-2048 compliance ledger
-- [x] On-the-fly report translation supporting German, French, and Spanish
-- [x] GDPR DPIA report generator
-- [x] OWASP LLM Top 10 assessment module
-- [x] MITRE ATLAS & NVD dependency checkers
-- [x] PDF compliance certificate exporter
-- [x] Secure DevSecOps CI/CD scanning pipeline
-- [x] RAG compliance chat assistant
-- [x] Prometheus & Grafana automated observability stack
-- [x] Production-ready Kubernetes (AKS) manifests
+Full architecture diagram: [docs/architecture.html](docs/architecture.html)
 
 ---
 
-## 🗺️ System Architecture
+## DevSecOps Pipeline
 
-The platform partitions trust into three distinct isolation boundaries: the **Internet Boundary** (ingress traffic), the **Internal Service Mesh Boundary** (FastAPI backend and Prometheus), and the **Data Layer Boundary** (isolated SQL database and Key Vault).
+Every push to `main` runs a four-stage security pipeline before any image reaches production:
 
-* Visualise the structural network details and threat boundaries under `docs/architecture.html`.
+```
+Push to main
+    │
+    ├── SAST ──────────────── Bandit + Semgrep (static code analysis)
+    │
+    ├── SCA ───────────────── pip-audit + Syft (SBOM) + Grype (CVE scan)
+    │
+    ├── Container Scan ─────── Trivy (image CVE scan, blocks on CRITICAL)
+    │
+    └── Push to ACR ────────── Only runs if all three gates pass
+```
+
+Security findings from SAST and container scans are published to the GitHub Security tab via SARIF.
 
 ---
 
-## 📂 Core Documentation
+## Observability
 
-| Resource | Description |
+The platform ships with a production-grade monitoring stack deployed to Azure Container Apps:
+
+- **Prometheus** scrapes `/metrics` every 15 seconds
+- **Grafana** dashboard covers three areas:
+
+**System Health** — API status, uptime, memory usage (RSS), CPU load
+
+**RED Method** — Request rate (QPS), HTTP latency (p50/p90/p99), throughput by endpoint
+
+**Compliance Analytics** — Total assessments run, DPIA reports generated, OWASP scans, PDF exports, risk tier distribution
+
+---
+
+## Infrastructure
+
+All cloud resources are provisioned via Terraform and stored as code:
+
+| Resource | Purpose |
 |---|---|
-| 📄 **[Project Charter](docs/project-charter.md)** | Scope statement, business goals, and timeline milestones. |
-| 📄 **[System Requirements](docs/requirements.md)** | Functional and non-functional engineering requirements. |
-| 📄 **[STRIDE Threat Model](docs/threat-model.md)** | OWASP Threat Dragon STRIDE analysis and full risk mitigation register. |
-| 📄 **[ADR 001 — Framework Decision](docs/adr/adr-001-fastapi-over-flask.md)** | Choosing FastAPI over Flask for async, high-concurrency compliance routines. |
-| 📄 **[ADR 002 — IaC Decision](docs/adr/adr-002-terraform-over-bicep.md)** | Standardising on Terraform over Bicep for multi-cloud readiness. |
-| 📄 **[ADR 003 — Orchestration](docs/adr/adr-003-aks-over-container-apps.md)** | Selecting AKS (Azure Kubernetes Service) for enterprise scaling. |
-| 📄 **[ADR 004 — Persistent Data](docs/adr/adr-004-postgresql-over-cosmosdb.md)** | Leveraging relational PostgreSQL for transactional audit trails. |
+| Azure Container Apps | Hosts API, Prometheus, Grafana |
+| Azure Database for PostgreSQL | Assessment history, user accounts |
+| Azure Container Registry | Stores Docker images |
+| Azure Key Vault | Secrets management |
+| Azure Storage (remote state) | Terraform state backend |
+
+Region: `germanywestcentral` — Frankfurt, Germany. Chosen for GDPR/BDSG alignment and EU data residency.
 
 ---
 
-## 🔐 Security Posture & Standards
+## Local Development
 
-Security is baked directly into the development cycle:
-* **Pre-Development Threat Modeling**: All potential vectors were analyzed using a STRIDE framework before a single line of backend logic was introduced.
-* **Static Application Security Testing (SAST)**: Automated linting and security vulnerability scanning using Bandit and Semgrep.
-* **Software Composition Analysis (SCA)**: Automatic SBOM (Software Bill of Materials) generation using Syft, with vulnerability checking powered by Grype.
-* **Container Scanning**: Every container image built is vetted by Trivy to prevent base-image dependency vulnerabilities.
-* **DAST Scans**: Staging endpoints undergo regular dynamic testing using OWASP ZAP scanners.
-* **Secret Management**: API keys, database credentials, and certificates are managed exclusively inside Azure Key Vault (no hardcoded environment keys).
+### Prerequisites
 
----
+- Python 3.11+
+- PostgreSQL running locally
+- Docker (for image builds)
 
-## 🛠️ Quick Start (Local Docker Compose)
+### Setup
 
-You can launch the entire compliance platform, database, and telemetry dashboard locally in less than 2 minutes.
+```bash
+git clone https://github.com/Shahriyar31/eu-ai-act-governance-platform.git
+cd eu-ai-act-governance-platform
+```
 
-### 1. Configure the Environment
-Ensure you have a `.env` file populated at the project root with your credentials:
+Create a `.env` file at the project root:
+
 ```env
-DB_USER=pgadmin
-DB_PASSWORD=Shahriyar@1998#
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
 DB_NAME=euaigovernance
 GROQ_API_KEY=your_groq_api_key
-HF_API_KEY=your_huggingface_key
 JWT_SECRET=minimum_32_characters_random_string
 ```
 
-### 2. Launch Services
-Run the following Docker Compose command to build and launch all containers:
+Install dependencies and start the API:
+
 ```bash
-docker compose up --build -d
+pip install -r requirements.txt
+uvicorn src.api.main:app --reload --port 8001
 ```
 
-### 3. Access Interfaces
-* **Legacy V1 Swagger Portal**: [http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)
-* **Modernised V2 Swagger Portal**: [http://localhost:8000/api/v2/docs](http://localhost:8000/api/v2/docs)
-* **Cryptographic Ledger Integrity Verification**: `GET http://localhost:8000/api/v1/verify-ledger`
-* **Prometheus Engine**: [http://localhost:9090](http://localhost:9090)
-* **Grafana Dashboard**: [http://localhost:3000](http://localhost:3000) *(User: `admin` / Password: `admin`)*
-  * Navigate to **Dashboards** > **Observability** > **EU AI Act Governance Observability** to view real-time compliance telemetry.
+API docs available at: `http://localhost:8001/docs`
 
 ---
 
-## 🤝 Contributing
+## Project Structure
 
-We welcome global contributions from AI policy experts, security engineers, and compliance automation developers. 
-
-Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** before opening issues or submitting pull requests.
+```
+eu-ai-act-governance-platform/
+├── .github/workflows/ci.yaml
+├── docker/Dockerfile
+├── docs/
+├── frontend/               React dashboard (Vite)
+├── k8s/                    Kubernetes manifests
+├── monitoring/
+│   ├── prometheus/         Custom Prometheus image + config
+│   └── grafana/            Custom Grafana image + dashboard JSON
+├── src/
+│   ├── api/main.py
+│   ├── routers/
+│   ├── governance/
+│   ├── database/
+│   ├── models/
+│   └── metrics.py
+├── terraform/
+├── tests/
+├── docker-compose.yml
+└── requirements.txt
+```
 
 ---
 
-## ⚖️ Licence
+## Documentation
 
-This project is licensed under the **MIT License** — feel free to use, modify, and distribute for corporate or individual deployments.
+| Document | Description |
+|---|---|
+| [Project Charter](docs/project-charter.md) | Scope, goals, and timeline |
+| [System Requirements](docs/requirements.md) | Functional and non-functional requirements |
+| [STRIDE Threat Model](docs/threat-model.md) | Threat analysis and risk register |
+| [ADR 001 — FastAPI over Flask](docs/adr/adr-001-fastapi-over-flask.md) | Framework decision |
+| [ADR 002 — Terraform over Bicep](docs/adr/adr-002-terraform-over-bicep.md) | IaC decision |
+| [ADR 003 — Container Apps over AKS](docs/adr/adr-003-aks-over-container-apps.md) | Deployment decision |
+| [ADR 004 — PostgreSQL over CosmosDB](docs/adr/adr-004-postgresql-over-cosmosdb.md) | Database decision |
+
+---
+
+## Security
+
+- Secrets managed exclusively via Azure Key Vault — no hardcoded credentials anywhere in the codebase
+- JWT authentication on all governance endpoints
+- SAST, SCA, and container scanning on every CI run
+- STRIDE threat model completed before any backend logic was written
+- TLS enforced at the Azure Container Apps ingress layer
+
+To report a security vulnerability, open a private issue or contact via LinkedIn.
+
+---
+
+## License
+
+MIT — free to use, modify, and distribute.
 
 ---
 
 <div align="center">
 
-**Built with 💻 by [Farhan Shahriyar](https://linkedin.com/in/farhanshahriyar) — Hamburg, Germany**
+Built by [Farhan Shahriyar](https://linkedin.com/in/farhanshahriyar) · Hamburg, Germany · MSc Data Science, TUHH
 
-*If this platform helps your organization navigate EU AI Act compliance, please consider giving us a ⭐ star on GitHub and sharing it with your network!*
+*If this project is useful to your organisation, a ⭐ on GitHub helps others find it.*
 
 </div>
