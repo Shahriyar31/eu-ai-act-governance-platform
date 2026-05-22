@@ -176,18 +176,14 @@ jobs:
               --max-replicas 3 \
               --cpu 0.5 \
               --memory 1.0Gi \
-              --secrets \
-                "db-password=${{ secrets.DB_PASSWORD }}" \
-                "jwt-secret=${{ secrets.JWT_SECRET }}" \
-                "groq-api-key=${{ secrets.GROQ_API_KEY }}" \
               --env-vars \
                 "DB_HOST=${{ env.DB_HOST }}" \
                 "DB_USER=pgadmin" \
                 "DB_NAME=euaigovernance" \
                 "DB_PORT=5432" \
-                "DB_PASSWORD=secretref:db-password" \
-                "JWT_SECRET=secretref:jwt-secret" \
-                "GROQ_API_KEY=secretref:groq-api-key"
+                "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+                "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+                "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}"
             echo "✅ Container App created."
           fi
 
