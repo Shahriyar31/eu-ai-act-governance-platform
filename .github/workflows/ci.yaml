@@ -76,8 +76,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [sast, sca]
     env:
-      GROQ_API_KEY: dummy-key-for-testing
-      JWT_SECRET: dummy-jwt-secret-for-testing-minimum-32-chars
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
       DB_HOST: localhost
       DB_USER: test
       DB_PASSWORD: test
