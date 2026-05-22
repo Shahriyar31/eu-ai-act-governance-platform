@@ -12,8 +12,6 @@ env:
 
 jobs:
 
-  # SAST - Static Application Security Testing
-  # Scans source code before it runs
   sast:
     name: SAST - Static Code Analysis
     runs-on: ubuntu-latest
@@ -47,8 +45,6 @@ jobs:
             bandit-report.json
             semgrep-report.json
 
-  # SCA - Software Composition Analysis
-  # Scans dependencies and generates SBOM
   sca:
     name: SCA - Dependency Scanning
     runs-on: ubuntu-latest
@@ -91,8 +87,6 @@ jobs:
             sbom.json
             grype-report.json
 
-  # Container Security Scanning
-  # Builds Docker image and scans it with Trivy
   container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
@@ -102,7 +96,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Build the React frontend first — Dockerfile copies frontend/dist/
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -119,9 +112,6 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-      # Scan and generate report — exit-code 0 means we REPORT but don't block
-      # on upstream unfixable CVEs in python:3.11-slim base image.
-      # The report is uploaded as evidence for compliance auditors.
       - name: Scan image with Trivy (report only)
         run: |
           IMAGE="eu-ai-governance:${{ github.sha }}"
@@ -140,8 +130,6 @@ jobs:
           name: trivy-report
           path: trivy-report.json
 
-  # Push to Azure Container Registry
-  # Only runs if all security scans pass
   push-to-acr:
     name: Push Image to ACR
     runs-on: ubuntu-latest
@@ -152,7 +140,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Build frontend again so this job is self-contained
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -178,3 +165,32 @@ jobs:
             -f docker/Dockerfile .
           docker push ${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ github.sha }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:latest
+
+  # Deploy to Azure Container Apps
+  # Only runs after image is successfully pushed to ACR
+  # Uses SHA tag for exact version tracking — never deploys an ambiguous 'latest'
+  deploy:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: [push-to-acr]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Update the Container App to use the exact image built in this pipeline run
+      # github.sha uniquely identifies this build — safer than 'latest'
+      - name: Deploy to Container Apps
+        run: |
+          az containerapp update \
+            --name eu-ai-governance \
+            --resource-group rg-eu-ai-governance \
+            --image ${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ github.sha }}
+
+      # Print the live URL so it appears in the pipeline logs
+      - name: Print live URL
+        run: |
+          echo "Deployed: https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io"
