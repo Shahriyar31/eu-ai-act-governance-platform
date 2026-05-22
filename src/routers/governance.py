@@ -292,7 +292,8 @@ async def assess_and_download(request: FullAssessmentRequest, db: Session = Depe
             classification,
             dpia,
             owasp,
-            nist
+            nist,
+            language=getattr(request, "language", "en")
         )
 
         # Append cryptographic audit ledger entry representing the full PDF certificate generation

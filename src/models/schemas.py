@@ -77,6 +77,7 @@ class FullAssessmentRequest(BaseModel):
     data_subjects: Optional[str] = None
     data_types: Optional[str] = None
     processing_purpose: Optional[str] = None
+    language: Optional[str] = "en"
 
 class FullAssessmentResponse(BaseModel):
     system_name: str
