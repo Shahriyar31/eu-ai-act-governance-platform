@@ -544,7 +544,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(eu_ai_act_assessments_total) or on() vector(0)",
+          "expr": "sum(compliance_assessments_total) or on() vector(0)",
           "instant": true,
           "legendFormat": "",
           "range": false,
@@ -597,7 +597,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(eu_ai_act_dpia_generated_total) or on() vector(0)",
+          "expr": "sum(dpia_generated_total) or on() vector(0)",
           "instant": true,
           "legendFormat": "",
           "range": false,
@@ -650,7 +650,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(eu_ai_act_owasp_checks_total) or on() vector(0)",
+          "expr": "sum(owasp_checks_total) or on() vector(0)",
           "instant": true,
           "legendFormat": "",
           "range": false,
@@ -703,7 +703,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(eu_ai_act_pdf_reports_generated_total) or on() vector(0)",
+          "expr": "sum(pdf_reports_total) or on() vector(0)",
           "instant": true,
           "legendFormat": "",
           "range": false,
@@ -764,7 +764,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "sumBy(risk_tier)(eu_ai_act_assessments_total) or sumBy(risk_tier)(eu_ai_act_dpia_generated_total)",
+          "expr": "sum by (tier) (risk_tier_classifications_total)",
           "legendFormat": "{{risk_tier}} Risk",
           "refId": "A"
         }
@@ -823,7 +823,7 @@
             "uid": "Prometheus"
           },
           "editorMode": "code",
-          "expr": "sumBy(sector)(eu_ai_act_assessments_total)",
+          "expr": "sum by (tier) (risk_tier_classifications_total)",
           "legendFormat": "{{sector}}",
           "refId": "A"
         }

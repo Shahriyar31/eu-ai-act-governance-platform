@@ -4,6 +4,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
+from prometheus_fastapi_instrumentator import Instrumentator
+
+# Import counters from dedicated metrics module — not defined here anymore
+from src.metrics import assessments_total, risk_tier_total
+
 from src.routers.governance import router as governance_router
 from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
@@ -22,6 +27,9 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Hooks into every request and exposes /metrics endpoint
+Instrumentator().instrument(app).expose(app)
+
 app.include_router(governance_router)
 app.include_router(admin_router)
 app.include_router(ai_router)
@@ -36,7 +44,6 @@ def health_check():
     }
 
 FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
-
 if FRONTEND_DIST.exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
 

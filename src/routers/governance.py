@@ -26,6 +26,13 @@ from src.governance.pdf_generator import generate_pdf_report
 from src.governance.nvd_checker import check_technologies_nvd
 from src.governance.atlas_checker import assess_atlas_risks
 from src.database.models import AssessmentHistory
+from src.metrics import (
+    assessments_total,
+    risk_tier_total,
+    dpia_generated_total,
+    owasp_checks_total,
+    pdf_reports_total
+)
 import uuid
 
 router = APIRouter(prefix="/api/v1", tags=["Governance"])
@@ -85,6 +92,7 @@ async def classify_endpoint(
 ):
     try:
         result = classify_ai_system(request, db)
+
         history = AssessmentHistory(
             system_name=result.system_name,
             sector=request.sector.value,
@@ -95,6 +103,11 @@ async def classify_endpoint(
         )
         db.add(history)
         db.commit()
+
+        # Count after successful DB write — only count what actually persisted
+        assessments_total.inc()
+        risk_tier_total.labels(tier=result.risk_tier.value).inc()
+
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -104,6 +117,8 @@ async def classify_endpoint(
 async def dpia_endpoint(request: DPIARequest):
     try:
         result = generate_dpia(request)
+        # Count every standalone DPIA generation
+        dpia_generated_total.inc()
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -113,6 +128,8 @@ async def dpia_endpoint(request: DPIARequest):
 async def owasp_endpoint(request: OWASPRequest):
     try:
         result = check_owasp_llm(request)
+        # Count every standalone OWASP check
+        owasp_checks_total.inc()
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -162,6 +179,13 @@ async def assess_and_download(request: FullAssessmentRequest, db: Session = Depe
             nist
         )
 
+        # Full assessment touches all three services — count each one
+        assessments_total.inc()
+        risk_tier_total.labels(tier=classification.risk_tier.value).inc()
+        dpia_generated_total.inc()
+        owasp_checks_total.inc()
+        pdf_reports_total.inc()
+
         return FileResponse(
             path=filepath,
             media_type="application/pdf",
@@ -199,4 +223,3 @@ def get_history(
         }
         for r in records
     ]
-

@@ -235,4 +235,4 @@ secret.yaml
 keys/
 
 # PDF Reports
-*.pdf
+*.pdfsrc/api/main.py.bak
