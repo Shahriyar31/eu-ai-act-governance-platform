@@ -66,15 +66,19 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       # ──────────────────────────────────────────────────────
-      # Register the Microsoft.App provider (needed once per
-      # subscription — safe to re-run, it's idempotent).
-      # Without this, az containerapp env create fails with
-      # "resource provider not registered" on student accounts.
+      # Register Azure providers — needed for Container Apps.
+      # We use `|| true` so this never BLOCKS the pipeline.
+      # Student accounts may lack subscription-level permission
+      # to register providers, but the providers are often
+      # already registered anyway — so this is just a safety net.
       # ──────────────────────────────────────────────────────
-      - name: 📋 Register Azure Container Apps provider
+      - name: 📋 Register Azure Container Apps providers (soft)
         run: |
-          az provider register --namespace Microsoft.App --wait
-          az provider register --namespace Microsoft.OperationalInsights --wait
+          az provider register --namespace Microsoft.App || true
+          az provider register --namespace Microsoft.OperationalInsights || true
+          # Check registration status (informational only)
+          az provider show --namespace Microsoft.App --query "registrationState" -o tsv || true
+          az provider show --namespace Microsoft.OperationalInsights --query "registrationState" -o tsv || true
 
       - name: 🏷️ Resolve image tag
         id: tag
@@ -95,16 +99,26 @@ jobs:
       - name: 🔑 Enable ACR admin and get pull credentials
         id: acr
         run: |
+          echo "Enabling ACR admin access..."
           az acr update --name ${{ env.ACR_NAME }} --admin-enabled true
+
+          echo "Fetching ACR credentials..."
           ACR_USERNAME=$(az acr credential show \
             --name ${{ env.ACR_NAME }} \
             --query username -o tsv)
           ACR_PASSWORD=$(az acr credential show \
             --name ${{ env.ACR_NAME }} \
             --query "passwords[0].value" -o tsv)
+
+          if [ -z "$ACR_USERNAME" ] || [ -z "$ACR_PASSWORD" ]; then
+            echo "❌ ERROR: Failed to retrieve ACR credentials. Check that AZURE_CREDENTIALS has 'Owner' or 'Contributor' role on the ACR resource."
+            exit 1
+          fi
+
           echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
           echo "::add-mask::$ACR_PASSWORD"
           echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
+          echo "✅ ACR credentials retrieved successfully."
 
       # ──────────────────────────────────────────────────────
       # Create the Container Apps Environment if it doesn't
