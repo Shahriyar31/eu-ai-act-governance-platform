@@ -8,19 +8,16 @@
 
 ---
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![LangChain](https://img.shields.io/badge/LangChain-1C3C3A?style=for-the-badge&logo=chainlink&logoColor=white)](https://github.com/langchain-ai/langchain)
-
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)
-[![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)](https://www.terraform.io)
-[![Azure AKS](https://img.shields.io/badge/Azure_AKS-0089D6?style=for-the-badge&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/en-us/products/kubernetes-service)
-
-[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)](https://prometheus.io)
-[![Grafana](https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com)
-[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/features/actions)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white)](https://www.terraform.io)
+[![Azure AKS](https://img.shields.io/badge/Azure_AKS-0089D6?style=flat-square&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com/en-us/products/kubernetes-service)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white)](https://prometheus.io)
+[![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)](https://grafana.com)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/features/actions)
 
 </div>
 
@@ -47,11 +44,35 @@ This platform bridges that gap by **automating and standardising AI compliance**
 
 ---
 
+## 🔒 Phase 6 Enterprise Security Hardening
+
+Our latest sprint introduced critical banking-grade compliance verification, API scalability, and localized legal capabilities:
+
+### 1. Cryptographically Signed Audit Ledger
+Every compliance assessment (`/classify`, `/dpia`, `/owasp-check`, `/assess-and-download`) computes a **SHA-256 block hash** containing its payload parameters combined sequentially with the hash of the previous transaction.
+* **Digital Signatures**: The server dynamically signs each block hash using a **2048-bit RSA Private Key** under the **RS256 (PSS-padded)** cryptosystem.
+* **Tamper Verification**: The `/api/v1/verify-ledger` endpoint sequentially re-computes the hashes and validates signatures against the public key. Any database alteration, deletion, or insertion instantly breaks the signature chain, pointing out the exact corrupted row!
+* **Docker Keyring Volume**: The RSA keypair is securely mounted on the host machine (`./keys`) to prevent key loss or signature invalidation during container upgrades or image rebuilds.
+
+### 2. Isolated API Versioning & Swagger Docs
+Designed as a scalable micro-gateway, the FastAPI service maintains isolated OpenAPI routing tables to ensure backward compatibility:
+* **Legacy V1 (Docs: `/api/v1/docs`)**: Houses original classification models, OWASP check engines, and GDPR processors.
+* **Modernised V2 (Docs: `/api/v2/docs`)**: Integrates the modernized **`intended_purpose`** parameters and advanced Article 6 / Annex III classifications stamped under `EU AI Act 2024 (Reg. EU 2024/1689)`.
+* **Universal Instrumentator**: Prometheus performance monitoring extends natively across both mounted sub-applications.
+
+### 3. Dynamic On-The-Fly Translation (Multilingual PDFs)
+The full compliance certificate generator now accepts optional `language` request attributes:
+* **English (`en`) / German (`de`) / French (`fr`) / Spanish (`es`)**
+* Transcribes structural headers, risk levels, data subject classifications, OWASP checklists, and priority action lists into native European languages to directly satisfy regional supervisory bodies (like CNIL, AEPD, or BaFin).
+
+---
+
 ## ⚙️ Technology Stack
 
 | Layer | Tools & Technologies |
 |---|---|
 | **Backend API** | Python 3.11, FastAPI, Pydantic, SQLAlchemy, Uvicorn |
+| **Cryptography** | RSA-2048 (RS256 PSS), Cryptography (PyCA), SHA-256 Chaining |
 | **Artificial Intelligence** | Azure OpenAI, LangChain, RAG Knowledge Base, FastEmbed |
 | **Database** | PostgreSQL (Local / Azure Database for PostgreSQL) |
 | **Observability** | Prometheus, Grafana, Prometheus FastAPI Instrumentator |
@@ -63,7 +84,7 @@ This platform bridges that gap by **automating and standardising AI compliance**
 
 ## 📈 Project Status & Roadmap
 
-The platform is designed and constructed in organized, sprint-based phases. 
+The platform is designed and constructed in organized, sprint-based phases.
 
 | Phase / Sprint | Focus Area | Status |
 |---|---|---|
@@ -73,10 +94,12 @@ The platform is designed and constructed in organized, sprint-based phases.
 | **Sprint 3** | Compliance Governance & Classification Engine | ✅ Complete |
 | **Sprint 4** | AI Integrations (RAG Knowledge Assistant) | ✅ Complete |
 | **Sprint 5** | Kubernetes Deployments & Grafana Observability | ✅ Complete |
-| **Sprint 6** | Polish, Audits & Multi-language Reporting | ⏳ Pending |
+| **Sprint 6** | Polish, Audits & Multi-language Reporting | ✅ Complete |
 
 ### Completed Milestones
-- [x] EU AI Act risk classification engine
+- [x] EU AI Act risk classification engine (V1 & V2 isolated schemas)
+- [x] Cryptographically signed SHA-256 / RSA-2048 compliance ledger
+- [x] On-the-fly report translation supporting German, French, and Spanish
 - [x] GDPR DPIA report generator
 - [x] OWASP LLM Top 10 assessment module
 - [x] MITRE ATLAS & NVD dependency checkers
@@ -85,11 +108,6 @@ The platform is designed and constructed in organized, sprint-based phases.
 - [x] RAG compliance chat assistant
 - [x] Prometheus & Grafana automated observability stack
 - [x] Production-ready Kubernetes (AKS) manifests
-
-### Current Backlog
-- [ ] Multi-language report support (German, French, Spanish)
-- [ ] API versioning and automated public Swagger documentation
-- [ ] Cryptographically signed audit log ledger for compliance compliance audits
 
 ---
 
@@ -149,7 +167,9 @@ docker compose up --build -d
 ```
 
 ### 3. Access Interfaces
-* **FastAPI Backend (Swagger API Docs)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Legacy V1 Swagger Portal**: [http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)
+* **Modernised V2 Swagger Portal**: [http://localhost:8000/api/v2/docs](http://localhost:8000/api/v2/docs)
+* **Cryptographic Ledger Integrity Verification**: `GET http://localhost:8000/api/v1/verify-ledger`
 * **Prometheus Engine**: [http://localhost:9090](http://localhost:9090)
 * **Grafana Dashboard**: [http://localhost:3000](http://localhost:3000) *(User: `admin` / Password: `admin`)*
   * Navigate to **Dashboards** > **Observability** > **EU AI Act Governance Observability** to view real-time compliance telemetry.
