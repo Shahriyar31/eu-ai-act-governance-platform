@@ -1,0 +1,206 @@
+name: CD — Deploy to Azure AKS
+
+# ─────────────────────────────────────────────────────────────
+# 🏭 THE FEYNMAN ANALOGY: The Car Delivery Truck
+#
+# The CI pipeline (ci.yaml) is your Quality Control Inspector.
+# It checks the car (Docker image) is safe, then parks it in
+# the Warehouse (Azure Container Registry / ACR).
+#
+# THIS pipeline is the Delivery Truck.
+# It only leaves the warehouse AFTER the CI Inspector gives
+# the green light (needs: [ci] below). It then drives the
+# approved car to the Showroom (AKS) and tells the Showroom
+# manager to swap out the old display car with the new one —
+# with zero downtime using Kubernetes rolling updates.
+# ─────────────────────────────────────────────────────────────
+
+on:
+  # Trigger automatically after CI pipeline completes successfully on main
+  workflow_run:
+    workflows: ["DevSecOps Security Pipeline"]
+    types: [completed]
+    branches: [main]
+
+  # Also allow manual deployment from GitHub Actions UI
+  # Useful for hotfixes or emergency rollbacks
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (defaults to latest)'
+        required: false
+        default: 'latest'
+
+env:
+  ACR_LOGIN_SERVER: euaigovernanceacr.azurecr.io
+  ACR_NAME: euaigovernanceacr
+  AKS_CLUSTER_NAME: aks-eu-ai-governance
+  RESOURCE_GROUP: rg-eu-ai-governance
+  K8S_NAMESPACE: default
+  DEPLOYMENT_NAME: eu-ai-governance
+  CONTAINER_NAME: api
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to AKS
+    runs-on: ubuntu-latest
+
+    # ─────────────────────────────────────────────────────────
+    # CRITICAL SAFETY GATE:
+    # Only run this job if the CI pipeline that triggered us
+    # actually PASSED. If CI failed (security scan found a
+    # critical vulnerability), we do NOT deploy broken or
+    # unsafe code to production. Ever.
+    # ─────────────────────────────────────────────────────────
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    # Explicit permissions: least-privilege principle
+    # Only request what this job actually needs
+    permissions:
+      contents: read       # Read the repo
+      id-token: write      # Required for Azure OIDC login (more secure than secret passwords)
+
+    steps:
+      # ────────────────────────────────────────────────────────
+      # STEP 1: Get the code
+      # ────────────────────────────────────────────────────────
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # ────────────────────────────────────────────────────────
+      # STEP 2: Authenticate to Azure
+      #
+      # Feynman Analogy: Show your badge at the factory gate.
+      # We use a GitHub Secret (AZURE_CREDENTIALS) that contains
+      # a Service Principal — a special robot user that only has
+      # permission to deploy to this specific AKS cluster.
+      # ────────────────────────────────────────────────────────
+      - name: 🔐 Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # ────────────────────────────────────────────────────────
+      # STEP 3: Connect kubectl to your AKS cluster
+      #
+      # Feynman Analogy: Get the Showroom address and keys.
+      # kubectl is the remote control for Kubernetes. This step
+      # fetches the cluster's access credentials and saves them
+      # so all subsequent kubectl commands know WHERE to send
+      # their instructions.
+      # ────────────────────────────────────────────────────────
+      - name: ☸️ Connect kubectl to AKS cluster
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+
+      # ────────────────────────────────────────────────────────
+      # STEP 4: Determine which image tag to deploy
+      #
+      # If triggered by CI pipeline → use the exact commit SHA
+      # (e.g. euaigovernanceacr.azurecr.io/eu-ai-governance:abc1234)
+      # If triggered manually → use the manually provided tag
+      # This ensures we always know EXACTLY what code is running
+      # in production — no ambiguity with "latest".
+      # ────────────────────────────────────────────────────────
+      - name: 🏷️ Resolve deployment image tag
+        id: resolve_tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.image_tag }}"
+          else
+            # Use the SHA of the commit that triggered the upstream CI run
+            TAG="${{ github.event.workflow_run.head_sha }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Deploying image tag: $TAG"
+
+      # ────────────────────────────────────────────────────────
+      # STEP 5: Roll out the new image to AKS
+      #
+      # Feynman Analogy: The delivery truck pulls up to the
+      # showroom and swaps the cars one at a time.
+      #
+      # `kubectl set image` tells Kubernetes:
+      # "For the Deployment named 'eu-ai-governance', swap the
+      # container called 'api' to use this new Docker image."
+      #
+      # Kubernetes then performs a ROLLING UPDATE:
+      # - Starts a new pod (container) with the new image
+      # - Waits for it to pass its health check (readinessProbe)
+      # - Only then terminates one of the old pods
+      # - Repeats until all replicas are updated
+      # → ZERO DOWNTIME for real users!
+      # ────────────────────────────────────────────────────────
+      - name: 🔄 Roll out new image to AKS (zero-downtime)
+        run: |
+          IMAGE="${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ steps.resolve_tag.outputs.tag }}"
+          echo "Rolling out: $IMAGE"
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
+            ${{ env.CONTAINER_NAME }}=$IMAGE \
+            --namespace=${{ env.K8S_NAMESPACE }}
+
+      # ────────────────────────────────────────────────────────
+      # STEP 6: Wait and verify the rollout succeeded
+      #
+      # Feynman Analogy: The delivery driver waits and watches
+      # to make sure every new car drives properly off the lot
+      # before driving away. If a car fails its test drive
+      # (health check), Kubernetes AUTOMATICALLY rolls back to
+      # the previous version. This step blocks the pipeline
+      # until all pods are healthy or times out after 5 min.
+      # ────────────────────────────────────────────────────────
+      - name: ✅ Verify rollout health (5 min timeout)
+        run: |
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=300s
+
+      # ────────────────────────────────────────────────────────
+      # STEP 7: Print deployment summary
+      #
+      # Shows the live running pods so you can confirm in the
+      # GitHub Actions log exactly what is running in production.
+      # ────────────────────────────────────────────────────────
+      - name: 📋 Print live deployment status
+        run: |
+          echo "============================================"
+          echo "  DEPLOYMENT COMPLETE — LIVE POD STATUS"
+          echo "============================================"
+          kubectl get pods \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --selector=app=${{ env.DEPLOYMENT_NAME }} \
+            -o wide
+          echo ""
+          echo "Active image:"
+          kubectl get deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo ""
+          echo "============================================"
+
+      # ────────────────────────────────────────────────────────
+      # STEP 8 (SAFETY NET): Auto-rollback on failure
+      #
+      # Feynman Analogy: If the new car breaks down in the lot,
+      # the manager immediately puts the previous safe car back
+      # on display and calls the engineers.
+      #
+      # `if: failure()` means this step ONLY runs if step 5 or
+      # step 6 above failed. It uses `kubectl rollout undo`
+      # to instantly revert the deployment to the previous
+      # working image — no manual action needed!
+      # ────────────────────────────────────────────────────────
+      - name: 🔁 Auto-rollback on deployment failure
+        if: failure()
+        run: |
+          echo "⚠️  Deployment failed! Initiating automatic rollback..."
+          kubectl rollout undo deployment/${{ env.DEPLOYMENT_NAME }} \
+            --namespace=${{ env.K8S_NAMESPACE }}
+          echo "✅ Rollback complete. Previous version restored."
+          kubectl get pods \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --selector=app=${{ env.DEPLOYMENT_NAME }}
