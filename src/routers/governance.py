@@ -1,3 +1,4 @@
+from fastapi.responses import FileResponse
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from src.database.connection import get_db
@@ -110,8 +111,8 @@ async def owasp_endpoint(request: OWASPRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/assess", response_model=FullAssessmentResponse)
-async def full_assessment_endpoint(request: FullAssessmentRequest, db: Session = Depends(get_db)):
+@router.post("/assess-and-download")
+async def assess_and_download(request: FullAssessmentRequest, db: Session = Depends(get_db)):
     try:
         class_req = ClassificationRequest(
             system_name=request.system_name,
@@ -146,7 +147,6 @@ async def full_assessment_endpoint(request: FullAssessmentRequest, db: Session =
 
         nist = map_to_nist(request.system_name, classification, owasp)
 
-        report_id = str(uuid.uuid4())
         filepath = generate_pdf_report(
             request.system_name,
             classification,
@@ -155,13 +155,10 @@ async def full_assessment_endpoint(request: FullAssessmentRequest, db: Session =
             nist
         )
 
-        return FullAssessmentResponse(
-            system_name=request.system_name,
-            classification=classification,
-            dpia=dpia,
-            owasp=owasp,
-            report_id=report_id,
-            report_download_url=f"/api/v1/reports/{report_id}"
+        return FileResponse(
+            path=filepath,
+            media_type="application/pdf",
+            filename=f"{request.system_name.replace(' ', '_')}_compliance_report.pdf"
         )
 
     except Exception as e:

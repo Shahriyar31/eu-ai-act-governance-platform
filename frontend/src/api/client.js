@@ -30,3 +30,22 @@ export const getHistory = () =>
   api.get('/api/v1/history')
 
 export default api
+
+
+export const downloadReport = async (data) => {
+  const response = await fetch('/api/v1/assess-and-download', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  if (!response.ok) throw new Error('Report generation failed')
+  const blob = await response.blob()
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${data.system_name}_compliance_report.pdf`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  window.URL.revokeObjectURL(url)
+}

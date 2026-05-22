@@ -7,13 +7,11 @@ from pathlib import Path
 from src.routers.governance import router as governance_router
 from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
-from src.ai.rag_engine import initialise_knowledge_base
 from src.database.init_db import init_db
 
 @asynccontextmanager
 async def lifespan(app):
     init_db()
-    initialise_knowledge_base()
     yield
 
 app = FastAPI(

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { classifySystem } from '../api/client'
 import RiskBadge from '../components/RiskBadge'
+import { downloadReport } from '../api/client'
 
 const SECTORS = [
   'healthcare', 'employment', 'education', 'law_enforcement',
@@ -40,6 +41,7 @@ export default function Classify() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [downloading, setDownloading] = useState(false)
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -56,6 +58,26 @@ export default function Classify() {
   }
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
+
+  const handleDownloadReport = async () => {
+  setDownloading(true)
+  try {
+    await downloadReport({
+      system_name: form.system_name,
+      description: form.description,
+      sector: form.sector,
+      automated_decision: form.automated_decision,
+      processes_personal_data: form.processes_personal_data,
+      interacts_with_humans: form.interacts_with_humans,
+      uses_llm: false,
+      accepts_user_input: false,
+    })
+  } catch (e) {
+    setError('Report download failed')
+  } finally {
+    setDownloading(false)
+  }
+}
 
   return (
     <div>
@@ -209,6 +231,28 @@ export default function Classify() {
                   ))}
                 </div>
               </div>
+
+              <button
+                onClick={handleDownloadReport}
+                disabled={downloading}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'transparent',
+                  color: 'var(--accent)',
+                  border: '1px solid var(--accent)',
+                  borderRadius: '4px',
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  cursor: downloading ? 'not-allowed' : 'pointer',
+                  opacity: downloading ? 0.5 : 1,
+                }}
+              >
+                {downloading ? 'GENERATING PDF...' : '↓ DOWNLOAD COMPLIANCE REPORT'}
+              </button>
+
             </div>
           )}
         </div>
