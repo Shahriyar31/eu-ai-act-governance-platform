@@ -45,17 +45,14 @@ class RuleResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
+      
+      
 @router.get("/rules", response_model=list[RuleResponse])
 def list_rules(
     include_inactive: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(verify_token)
-):        
-
-
-@router.get("/rules", response_model=list[RuleResponse])
-def list_rules(include_inactive: bool = False, db: Session = Depends(get_db)):
+):
     query = db.query(ClassificationRule)
     if not include_inactive:
         query = query.filter(ClassificationRule.is_active == True)

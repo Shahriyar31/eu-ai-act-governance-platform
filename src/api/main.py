@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
+from prometheus_fastapi_instrumentator import Instrumentator
 from src.routers.governance import router as governance_router
 from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
@@ -22,6 +23,9 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan
 )
+
+# Initialize and register Prometheus FastAPI Instrumentator
+Instrumentator().instrument(app).expose(app)
 
 app.include_router(auth_router)
 app.include_router(governance_router)

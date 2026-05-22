@@ -26,6 +26,7 @@ from src.governance.pdf_generator import generate_pdf_report
 from src.governance.nvd_checker import check_technologies_nvd
 from src.governance.atlas_checker import assess_atlas_risks
 from src.database.models import AssessmentHistory
+from src.api.metrics import classification_counter, dpia_counter, owasp_counter, pdf_counter
 import uuid
 
 router = APIRouter(prefix="/api/v1", tags=["Governance"])
@@ -95,6 +96,13 @@ async def classify_endpoint(
         )
         db.add(history)
         db.commit()
+        
+        # Increment custom Prometheus metric for classification
+        classification_counter.labels(
+            risk_tier=result.risk_tier.value,
+            sector=request.sector.value
+        ).inc()
+        
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -104,6 +112,10 @@ async def classify_endpoint(
 async def dpia_endpoint(request: DPIARequest):
     try:
         result = generate_dpia(request)
+        
+        # Increment custom Prometheus metric for DPIA generation
+        dpia_counter.labels(risk_tier=request.risk_tier.value).inc()
+        
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -113,6 +125,10 @@ async def dpia_endpoint(request: DPIARequest):
 async def owasp_endpoint(request: OWASPRequest):
     try:
         result = check_owasp_llm(request)
+        
+        # Increment custom Prometheus metric for OWASP LLM check
+        owasp_counter.labels(uses_llm=str(request.uses_llm)).inc()
+        
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -161,6 +177,9 @@ async def assess_and_download(request: FullAssessmentRequest, db: Session = Depe
             owasp,
             nist
         )
+
+        # Increment custom Prometheus metric for PDF downloads
+        pdf_counter.labels(system_name=request.system_name).inc()
 
         return FileResponse(
             path=filepath,
