@@ -119,4 +119,25 @@ class ATLASCheckResponse(BaseModel):
     recommendations: List[str]
     technique_details: List[str]
 
+
+class ClassificationRequestV2(BaseModel):
+    system_name: str = Field(..., description="Name of the AI system being assessed")
+    description: str = Field(..., description="What the AI system does")
+    intended_purpose: str = Field(..., description="The specific intended clinical, industrial, or educational purpose of the AI")
+    sector: SectorEnum = Field(..., description="Sector the AI system operates in")
+    automated_decision: bool = Field(..., description="Makes decisions without human review")
+    processes_personal_data: bool = Field(..., description="Processes personal data of individuals")
+    interacts_with_humans: bool = Field(..., description="Directly interacts with humans")
+
+
+class ClassificationResponseV2(BaseModel):
+    system_name: str
+    risk_tier: RiskTierEnum
+    justification: str
+    obligations: List[str]
+    dpia_required: bool
+    intended_purpose: str
+    regulatory_framework: str = "EU AI Act 2024 (Reg. EU 2024/1689)"
+
+
     

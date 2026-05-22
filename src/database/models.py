@@ -41,3 +41,16 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuditLedger(Base):
+    __tablename__ = "audit_ledger"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    action = Column(String, nullable=False)
+    system_name = Column(String, nullable=False)
+    payload = Column(Text, nullable=False) # JSON-stringified representation of the transaction
+    previous_hash = Column(String, nullable=False)
+    record_hash = Column(String, nullable=False)
+    signature = Column(String, nullable=False)

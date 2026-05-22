@@ -230,3 +230,6 @@ terraform/terraform.tfstate.backup
 # k8s
 
 secret.yaml
+
+# Compliance Cryptographic Keys
+keys/
