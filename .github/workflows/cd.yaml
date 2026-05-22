@@ -1,7 +1,7 @@
 name: CD — Deploy to Azure Container Apps
 
 # ─────────────────────────────────────────────────────────────
-# 🏭 THE FEYNMAN ANALOGY: The Pop-Up Restaurant
+# THE FEYNMAN ANALOGY: The Pop-Up Restaurant
 #
 # AKS is like building a permanent restaurant — expensive.
 # Azure Container Apps is like a pop-up stall:
@@ -19,9 +19,9 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Docker image tag to deploy (defaults to latest)'
+        description: "Docker image tag to deploy (defaults to latest)"
         required: false
-        default: 'latest'
+        default: "latest"
 
 env:
   ACR_NAME: euaigovernanceacr
@@ -34,7 +34,7 @@ env:
 
 jobs:
   deploy:
-    name: 🚀 Deploy to Azure Container Apps
+    name: Deploy to Azure Container Apps
     runs-on: ubuntu-latest
 
     if: >
@@ -46,7 +46,7 @@ jobs:
       id-token: write
 
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       # ──────────────────────────────────────────────────────
@@ -57,30 +57,26 @@ jobs:
       # 'az containerapp' is a plugin that must be added first —
       # like installing a new app on your phone before using it.
       # ──────────────────────────────────────────────────────
-      - name: 🔧 Install Azure Container Apps CLI extension
+      - name: Install Azure Container Apps CLI extension
         run: az extension add --name containerapp --upgrade --yes
 
-      - name: 🔐 Login to Azure
+      - name: Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       # ──────────────────────────────────────────────────────
-      # Register Azure providers — needed for Container Apps.
-      # We use `|| true` so this never BLOCKS the pipeline.
-      # Student accounts may lack subscription-level permission
-      # to register providers, but the providers are often
-      # already registered anyway — so this is just a safety net.
+      # Register the Microsoft.App provider (needed once per
+      # subscription — safe to re-run, it's idempotent).
+      # Without this, az containerapp env create fails with
+      # "resource provider not registered" on student accounts.
       # ──────────────────────────────────────────────────────
-      - name: 📋 Register Azure Container Apps providers (soft)
+      - name: Register Azure Container Apps provider
         run: |
-          az provider register --namespace Microsoft.App || true
-          az provider register --namespace Microsoft.OperationalInsights || true
-          # Check registration status (informational only)
-          az provider show --namespace Microsoft.App --query "registrationState" -o tsv || true
-          az provider show --namespace Microsoft.OperationalInsights --query "registrationState" -o tsv || true
+          az provider register --namespace Microsoft.App --wait
+          az provider register --namespace Microsoft.OperationalInsights --wait
 
-      - name: 🏷️ Resolve image tag
+      - name: Resolve image tag
         id: tag
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -96,48 +92,38 @@ jobs:
       # We mask the password immediately so it never shows
       # in plain text anywhere in the GitHub Actions logs.
       # ──────────────────────────────────────────────────────
-      - name: 🔑 Enable ACR admin and get pull credentials
+      - name: Enable ACR admin and get pull credentials
         id: acr
         run: |
-          echo "Enabling ACR admin access..."
           az acr update --name ${{ env.ACR_NAME }} --admin-enabled true
-
-          echo "Fetching ACR credentials..."
           ACR_USERNAME=$(az acr credential show \
             --name ${{ env.ACR_NAME }} \
             --query username -o tsv)
           ACR_PASSWORD=$(az acr credential show \
             --name ${{ env.ACR_NAME }} \
             --query "passwords[0].value" -o tsv)
-
-          if [ -z "$ACR_USERNAME" ] || [ -z "$ACR_PASSWORD" ]; then
-            echo "❌ ERROR: Failed to retrieve ACR credentials. Check that AZURE_CREDENTIALS has 'Owner' or 'Contributor' role on the ACR resource."
-            exit 1
-          fi
-
           echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
           echo "::add-mask::$ACR_PASSWORD"
           echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
-          echo "✅ ACR credentials retrieved successfully."
 
       # ──────────────────────────────────────────────────────
       # Create the Container Apps Environment if it doesn't
       # exist yet. Safe to skip if already provisioned.
       # ──────────────────────────────────────────────────────
-      - name: 🏗️ Create Container Apps Environment (if not exists)
+      - name: Create Container Apps Environment (if not exists)
         run: |
           if az containerapp env show \
                --name ${{ env.CONTAINER_APP_ENV_NAME }} \
                --resource-group ${{ env.RESOURCE_GROUP }} \
                --output none 2>/dev/null; then
-            echo "✅ Environment already exists — skipping."
+            echo " Environment already exists — skipping."
           else
-            echo "🔨 Creating Container Apps Environment..."
+            echo "Creating Container Apps Environment..."
             az containerapp env create \
               --name ${{ env.CONTAINER_APP_ENV_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --location ${{ env.LOCATION }}
-            echo "✅ Environment ready."
+            echo "Environment ready."
           fi
 
       # ──────────────────────────────────────────────────────
@@ -145,7 +131,7 @@ jobs:
       # First run  → full create with env vars and secrets
       # Later runs → image-only update (fast rolling deploy)
       # ──────────────────────────────────────────────────────
-      - name: 🐳 Create or Update Container App
+      - name: Create or Update Container App
         run: |
           IMAGE="${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ steps.tag.outputs.tag }}"
 
@@ -154,14 +140,14 @@ jobs:
                --resource-group ${{ env.RESOURCE_GROUP }} \
                --output none 2>/dev/null; then
 
-            echo "🔄 Updating existing Container App image to: $IMAGE"
+            echo "Updating existing Container App image to: $IMAGE"
             az containerapp update \
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image "$IMAGE"
 
           else
-            echo "🆕 Creating new Container App..."
+            echo "Creating new Container App..."
             az containerapp create \
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -176,18 +162,22 @@ jobs:
               --max-replicas 3 \
               --cpu 0.5 \
               --memory 1.0Gi \
+              --secrets \
+                "db-password=${{ secrets.DB_PASSWORD }}" \
+                "jwt-secret=${{ secrets.JWT_SECRET }}" \
+                "groq-api-key=${{ secrets.GROQ_API_KEY }}" \
               --env-vars \
                 "DB_HOST=${{ env.DB_HOST }}" \
                 "DB_USER=pgadmin" \
                 "DB_NAME=euaigovernance" \
                 "DB_PORT=5432" \
-                "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
-                "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-                "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}"
-            echo "✅ Container App created."
+                "DB_PASSWORD=secretref:db-password" \
+                "JWT_SECRET=secretref:jwt-secret" \
+                "GROQ_API_KEY=secretref:groq-api-key"
+            echo "Container App created."
           fi
 
-      - name: 🌐 Print live application URL
+      - name: Print live application URL
         run: |
           FQDN=$(az containerapp show \
             --name ${{ env.CONTAINER_APP_NAME }} \
@@ -195,8 +185,8 @@ jobs:
             --query "properties.configuration.ingress.fqdn" \
             --output tsv)
           echo "============================================"
-          echo "  ✅ DEPLOYMENT COMPLETE!"
-          echo "  🌐 App URL:  https://$FQDN"
-          echo "  📄 Swagger:  https://$FQDN/api/v1/docs"
-          echo "  📊 V2 Docs:  https://$FQDN/api/v2/docs"
+          echo "  DEPLOYMENT COMPLETE!"
+          echo "  App URL:  https://$FQDN"
+          echo "  Swagger:  https://$FQDN/api/v1/docs"
+          echo "  V2 Docs:  https://$FQDN/api/v2/docs"
           echo "============================================"

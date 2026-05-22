@@ -26,15 +26,13 @@ from src.governance.pdf_generator import generate_pdf_report
 from src.governance.nvd_checker import check_technologies_nvd
 from src.governance.atlas_checker import assess_atlas_risks
 from src.database.models import AssessmentHistory
-from src.api.metrics import classification_counter, dpia_counter, owasp_counter, pdf_counter
-from src.governance.ledger_service import append_audit_entry, verify_audit_ledger
 import uuid
 
-router = APIRouter(prefix="", tags=["Governance"])
+router = APIRouter(prefix="/api/v1", tags=["Governance"])
 
 
 @router.post("/atlas-check", response_model=ATLASCheckResponse)
-async def atlas_check_endpoint(request: ATLASCheckRequest, db: Session = Depends(get_db)):
+async def atlas_check_endpoint(request: ATLASCheckRequest):
     try:
         assessment = await assess_atlas_risks(
             system_name=request.system_name,
@@ -44,30 +42,6 @@ async def atlas_check_endpoint(request: ATLASCheckRequest, db: Session = Depends
             processes_personal_data=request.processes_personal_data,
             automated_decision=request.automated_decision
         )
-        
-        # Append cryptographic audit ledger entry
-        append_audit_entry(
-            db=db,
-            action="ATLAS_CHECK",
-            system_name=assessment.system_name,
-            payload_data={
-                "request": {
-                    "system_name": request.system_name,
-                    "uses_llm": request.uses_llm,
-                    "accepts_user_input": request.accepts_user_input,
-                    "has_external_api": request.has_external_api,
-                    "processes_personal_data": request.processes_personal_data,
-                    "automated_decision": request.automated_decision
-                },
-                "response": {
-                    "techniques_found": len(assessment.relevant_techniques),
-                    "tactics_covered": assessment.tactics_covered,
-                    "risk_summary": assessment.risk_summary,
-                    "recommendations": assessment.recommendations
-                }
-            }
-        )
-        
         return ATLASCheckResponse(
             system_name=assessment.system_name,
             techniques_found=len(assessment.relevant_techniques),
@@ -84,34 +58,12 @@ async def atlas_check_endpoint(request: ATLASCheckRequest, db: Session = Depends
 
 
 @router.post("/nvd-check", response_model=NVDCheckResponse)
-async def nvd_check_endpoint(request: NVDCheckRequest, db: Session = Depends(get_db)):
+async def nvd_check_endpoint(request: NVDCheckRequest):
     try:
         assessment = await check_technologies_nvd(
             request.system_name,
             request.technologies
         )
-        
-        # Append cryptographic audit ledger entry
-        append_audit_entry(
-            db=db,
-            action="NVD_CHECK",
-            system_name=assessment.system_name,
-            payload_data={
-                "request": {
-                    "system_name": request.system_name,
-                    "technologies": request.technologies
-                },
-                "response": {
-                    "technologies_checked": assessment.technologies_checked,
-                    "critical_count": assessment.critical_count,
-                    "high_count": assessment.high_count,
-                    "medium_count": assessment.medium_count,
-                    "overall_risk": assessment.overall_risk,
-                    "recommendations": assessment.recommendations
-                }
-            }
-        )
-        
         return NVDCheckResponse(
             system_name=assessment.system_name,
             technologies_checked=assessment.technologies_checked,
@@ -143,109 +95,24 @@ async def classify_endpoint(
         )
         db.add(history)
         db.commit()
-        
-        # Append cryptographic audit ledger entry
-        append_audit_entry(
-            db=db,
-            action="CLASSIFY_AI",
-            system_name=result.system_name,
-            payload_data={
-                "request": {
-                    "system_name": request.system_name,
-                    "description": request.description,
-                    "sector": request.sector.value,
-                    "automated_decision": request.automated_decision,
-                    "processes_personal_data": request.processes_personal_data,
-                    "interacts_with_humans": request.interacts_with_humans
-                },
-                "response": {
-                    "risk_tier": result.risk_tier.value,
-                    "justification": result.justification,
-                    "obligations": result.obligations,
-                    "dpia_required": result.dpia_required
-                }
-            }
-        )
-        
-        # Increment custom Prometheus metric for classification
-        classification_counter.labels(
-            risk_tier=result.risk_tier.value,
-            sector=request.sector.value
-        ).inc()
-        
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/dpia", response_model=DPIAResponse)
-async def dpia_endpoint(request: DPIARequest, db: Session = Depends(get_db)):
+async def dpia_endpoint(request: DPIARequest):
     try:
         result = generate_dpia(request)
-        
-        # Append cryptographic audit ledger entry
-        append_audit_entry(
-            db=db,
-            action="GENERATE_DPIA",
-            system_name=result.system_name,
-            payload_data={
-                "request": {
-                    "system_name": request.system_name,
-                    "description": request.description,
-                    "sector": request.sector.value,
-                    "data_subjects": request.data_subjects,
-                    "data_types": request.data_types,
-                    "processing_purpose": request.processing_purpose,
-                    "risk_tier": request.risk_tier.value
-                },
-                "response": {
-                    "dpia_required": result.dpia_required,
-                    "assessment_summary": result.assessment_summary,
-                    "risks_identified": result.risks_identified,
-                    "mitigation_measures": result.mitigation_measures,
-                    "recommendation": result.recommendation
-                }
-            }
-        )
-        
-        # Increment custom Prometheus metric for DPIA generation
-        dpia_counter.labels(risk_tier=request.risk_tier.value).inc()
-        
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/owasp-check", response_model=OWASPResponse)
-async def owasp_endpoint(request: OWASPRequest, db: Session = Depends(get_db)):
+async def owasp_endpoint(request: OWASPRequest):
     try:
         result = check_owasp_llm(request)
-        
-        # Append cryptographic audit ledger entry
-        append_audit_entry(
-            db=db,
-            action="OWASP_CHECK",
-            system_name=result.system_name,
-            payload_data={
-                "request": {
-                    "system_name": request.system_name,
-                    "description": request.description,
-                    "uses_llm": request.uses_llm,
-                    "accepts_user_input": request.accepts_user_input,
-                    "produces_output_used_in_decisions": request.produces_output_used_in_decisions,
-                    "has_access_to_external_systems": request.has_access_to_external_systems
-                },
-                "response": {
-                    "risks_found": result.risks_found,
-                    "severity_level": result.severity_level,
-                    "recommendations": result.recommendations
-                }
-            }
-        )
-        
-        # Increment custom Prometheus metric for OWASP LLM check
-        owasp_counter.labels(uses_llm=str(request.uses_llm)).inc()
-        
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -292,40 +159,8 @@ async def assess_and_download(request: FullAssessmentRequest, db: Session = Depe
             classification,
             dpia,
             owasp,
-            nist,
-            language=getattr(request, "language", "en")
+            nist
         )
-
-        # Append cryptographic audit ledger entry representing the full PDF certificate generation
-        append_audit_entry(
-            db=db,
-            action="FULL_ASSESSMENT_PDF",
-            system_name=request.system_name,
-            payload_data={
-                "system_name": request.system_name,
-                "description": request.description,
-                "sector": request.sector.value,
-                "classification": {
-                    "risk_tier": classification.risk_tier.value,
-                    "dpia_required": classification.dpia_required,
-                    "justification": classification.justification
-                },
-                "dpia": {
-                    "assessment_summary": dpia.assessment_summary,
-                    "risks_identified": dpia.risks_identified,
-                    "mitigation_measures": dpia.mitigation_measures,
-                    "recommendation": dpia.recommendation
-                },
-                "owasp": {
-                    "risks_found": owasp.risks_found,
-                    "severity_level": owasp.severity_level,
-                    "recommendations": owasp.recommendations
-                }
-            }
-        )
-
-        # Increment custom Prometheus metric for PDF downloads
-        pdf_counter.labels(system_name=request.system_name).inc()
 
         return FileResponse(
             path=filepath,
@@ -364,82 +199,4 @@ def get_history(
         }
         for r in records
     ]
-
-
-@router.get("/verify-ledger")
-def verify_ledger_endpoint(db: Session = Depends(get_db)):
-    """
-    Exposes the cryptographic audit log ledger integrity verification tool.
-    Scans, verifies hash chain links, recalculates fingerprints, and validates RSA signatures.
-    """
-    try:
-        audit_result = verify_audit_ledger(db)
-        return audit_result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/sandbox/tamper")
-def sandbox_tamper_endpoint(db: Session = Depends(get_db)):
-    """
-    Simulates a database breach / tamper by editing the latest block in place.
-    """
-    latest = db.query(AuditLedger).order_by(AuditLedger.id.desc()).first()
-    if not latest:
-        raise HTTPException(status_code=400, detail="No ledger records exist yet. Please perform a classification first!")
-    
-    if not latest.system_name.endswith(" (TAMPERED)"):
-        latest.system_name = latest.system_name + " (TAMPERED)"
-        db.commit()
-        
-    return {"status": "Tamper injected successfully!", "corrupted_id": latest.id}
-
-
-@router.post("/sandbox/restore")
-def sandbox_restore_endpoint(db: Session = Depends(get_db)):
-    """
-    Heals the ledger by restoring all tampered fields back to their original state.
-    """
-    rows = db.query(AuditLedger).all()
-    healed_count = 0
-    for row in rows:
-        if row.system_name.endswith(" (TAMPERED)"):
-            row.system_name = row.system_name.replace(" (TAMPERED)", "")
-            healed_count += 1
-            
-    db.commit()
-    return {"status": f"Ledger self-healed successfully! {healed_count} blocks restored."}
-
-
-@router.post("/sandbox/traffic")
-def sandbox_traffic_endpoint(db: Session = Depends(get_db)):
-    """
-    Simulates high-traffic auditing by inserting 5 randomized compliant transactions.
-    """
-    import random
-    MOCK_SYSTEMS = [
-        ("MedSentry Diagnostics", "healthcare", "minimal"),
-        ("ResumeRanker HR", "employment", "high"),
-        ("SmartGrades Evaluator", "education", "limited"),
-        ("CreditScore AI", "finance", "high"),
-        ("SafeDrive Autonomous", "critical_infrastructure", "high")
-    ]
-    for _ in range(5):
-        sys_name, sector, risk = random.choice(MOCK_SYSTEMS)
-        payload = {
-            "system_name": sys_name,
-            "description": f"Automated assessment running under {sector}.",
-            "sector": sector,
-            "risk_tier": risk,
-            "dpia_required": risk == "high",
-            "justification": f"System deployed in regulated {sector} sector."
-        }
-        append_audit_entry(
-            db=db,
-            action="FULL_ASSESSMENT_PDF",
-            system_name=sys_name,
-            payload_data=payload
-        )
-    return {"status": "5 compliance transactions successfully signed and chained!"}
-
 

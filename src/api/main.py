@@ -4,65 +4,36 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
-from prometheus_fastapi_instrumentator import Instrumentator
 from src.routers.governance import router as governance_router
-from src.routers.governance_v2 import router as governance_v2_router
 from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
-from src.database.init_db import init_db
 from src.routers.auth import router as auth_router
-
+from src.database.init_db import init_db
 
 @asynccontextmanager
 async def lifespan(app):
     init_db()
     yield
 
-# Main Gateway Application (manages UI serving, health, auth, and mounts API versions)
 app = FastAPI(
-    title="EU AI Act Governance Gateway",
-    description="Main entry gateway routing compliance traffic to isolated sub-applications.",
+    title="EU AI Act Governance Platform",
+    description="Automated compliance platform for EU AI Act, GDPR, and NIST AI RMF",
     version="0.1.0",
     lifespan=lifespan
 )
 
-# 1. Version 1.0 Compliance Application (Mounted at /api/v1)
-v1_app = FastAPI(
-    title="EU AI Act Governance API (V1)",
-    description="Compliance specifications (V1) for Risk Tier Classification, GDPR DPIA, and OWASP scanners.",
-    version="1.0.0"
-)
-v1_app.include_router(governance_router)
-v1_app.include_router(ai_router)
-
-# 2. Version 2.0 Compliance Application (Mounted at /api/v2)
-v2_app = FastAPI(
-    title="EU AI Act Governance API (V2)",
-    description="Compliance specifications (V2) introducing 'intended_purpose' Article 6 assessment metrics.",
-    version="2.0.0"
-)
-v2_app.include_router(governance_v2_router)
-
-# Mount the versioned sub-apps onto the parent gateway
-app.mount("/api/v1", v1_app)
-app.mount("/api/v2", v2_app)
-
-# Include shared global utilities directly on the main gateway
-app.include_router(auth_router)
+app.include_router(governance_router)
 app.include_router(admin_router)
-
-# Register Prometheus Instrumentator globally (automatically tracks all mounted sub-app requests!)
-Instrumentator().instrument(app).expose(app)
-
+app.include_router(ai_router)
+app.include_router(auth_router)
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "service": "EU AI Act Governance Platform Gateway",
+        "service": "EU AI Act Governance Platform",
         "timestamp": datetime.utcnow().isoformat()
     }
-
 
 FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
 
