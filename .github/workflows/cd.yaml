@@ -29,7 +29,7 @@ env:
   RESOURCE_GROUP: rg-eu-ai-governance
   LOCATION: germanywestcentral
   CONTAINER_APP_ENV_NAME: cae-eu-ai-governance
-  CONTAINER_APP_NAME: ca-eu-ai-governance
+  CONTAINER_APP_NAME: eu-ai-governance
   DB_HOST: psql-eu-ai-gov.postgres.database.azure.com
 
 jobs:
