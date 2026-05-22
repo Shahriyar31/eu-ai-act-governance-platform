@@ -1,33 +1,11 @@
 import { useState } from 'react'
-import { classifySystem } from '../api/client'
+import { classifySystem, downloadReport } from '../api/client'
 import RiskBadge from '../components/RiskBadge'
-import { downloadReport } from '../api/client'
 
 const SECTORS = [
   'healthcare', 'employment', 'education', 'law_enforcement',
   'border_control', 'critical_infrastructure', 'justice', 'finance', 'other'
 ]
-
-const inputStyle = {
-  width: '100%',
-  background: 'var(--bg-elevated)',
-  border: '1px solid var(--border)',
-  borderRadius: '4px',
-  padding: '10px 12px',
-  color: 'var(--text-primary)',
-  fontFamily: 'IBM Plex Sans, sans-serif',
-  fontSize: '13px',
-  outline: 'none',
-}
-
-const labelStyle = {
-  display: 'block',
-  fontSize: '12px',
-  fontFamily: 'IBM Plex Mono, monospace',
-  color: 'var(--text-secondary)',
-  letterSpacing: '0.06em',
-  marginBottom: '6px',
-}
 
 export default function Classify() {
   const [form, setForm] = useState({
@@ -40,8 +18,10 @@ export default function Classify() {
   })
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [downloading, setDownloading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -57,35 +37,68 @@ export default function Classify() {
     }
   }
 
-  const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
-
-  const handleDownloadReport = async () => {
-  setDownloading(true)
-  try {
-    await downloadReport({
-      system_name: form.system_name,
-      description: form.description,
-      sector: form.sector,
-      automated_decision: form.automated_decision,
-      processes_personal_data: form.processes_personal_data,
-      interacts_with_humans: form.interacts_with_humans,
-      uses_llm: false,
-      accepts_user_input: false,
-    })
-  } catch (e) {
-    setError('Report download failed')
-  } finally {
-    setDownloading(false)
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      await downloadReport({
+        system_name: form.system_name,
+        description: form.description,
+        sector: form.sector,
+        automated_decision: form.automated_decision,
+        processes_personal_data: form.processes_personal_data,
+        interacts_with_humans: form.interacts_with_humans,
+        uses_llm: false,
+        accepts_user_input: false,
+      })
+    } catch (e) {
+      setError('Report download failed')
+    } finally {
+      setDownloading(false)
+    }
   }
-}
+
+  const inputStyle = {
+    width: '100%',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border)',
+    borderRadius: '8px',
+    padding: '10px 14px',
+    color: 'var(--text-primary)',
+    fontFamily: 'IBM Plex Sans, sans-serif',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'border-color 0.15s ease',
+  }
+
+  const labelStyle = {
+    display: 'block',
+    fontFamily: 'IBM Plex Mono, monospace',
+    fontSize: '11px',
+    color: 'var(--text-secondary)',
+    letterSpacing: '0.08em',
+    marginBottom: '6px',
+  }
 
   return (
-    <div>
+    <div style={{ animation: 'slideUp 0.4s ease forwards' }}>
       <div style={{ marginBottom: '32px' }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: 'var(--accent)', letterSpacing: '0.12em', marginBottom: '8px' }}>
+        <div style={{
+          fontFamily: 'IBM Plex Mono, monospace',
+          fontSize: '11px',
+          color: 'var(--accent)',
+          letterSpacing: '0.12em',
+          marginBottom: '8px',
+        }}>
           EU AI ACT — ARTICLE 6 & ANNEX III
         </div>
-        <h1 style={{ fontSize: '28px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+        <h1 style={{
+          fontSize: '32px',
+          fontWeight: 700,
+          fontFamily: 'Inter, sans-serif',
+          color: 'var(--text-primary)',
+          letterSpacing: '-0.02em',
+          marginBottom: '8px',
+        }}>
           Risk Classification
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
@@ -93,11 +106,22 @@ export default function Classify() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
-        <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '6px', padding: '28px' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          padding: '28px',
+        }}>
+          <div style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+            marginBottom: '24px',
+            fontFamily: 'Inter, sans-serif',
+          }}>
             System Details
-          </h2>
+          </div>
 
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>SYSTEM NAME</label>
@@ -106,6 +130,8 @@ export default function Classify() {
               value={form.system_name}
               onChange={e => set('system_name', e.target.value)}
               placeholder="e.g. Patient Diagnosis Assistant"
+              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
 
@@ -116,6 +142,8 @@ export default function Classify() {
               value={form.description}
               onChange={e => set('description', e.target.value)}
               placeholder="Describe what the AI system does..."
+              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
 
@@ -134,20 +162,30 @@ export default function Classify() {
             </select>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '28px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
             {[
               { field: 'automated_decision', label: 'Makes automated decisions without human review' },
               { field: 'processes_personal_data', label: 'Processes personal data of individuals' },
               { field: 'interacts_with_humans', label: 'Directly interacts with humans' },
             ].map(({ field, label }) => (
-              <label key={field} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <label key={field} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                padding: '10px 14px',
+                background: form[field] ? 'var(--accent-dim)' : 'var(--bg-elevated)',
+                border: `1px solid ${form[field] ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: '8px',
+                transition: 'all 0.15s ease',
+              }}>
                 <input
                   type="checkbox"
                   checked={form[field]}
                   onChange={e => set(field, e.target.checked)}
-                  style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}
+                  style={{ width: '16px', height: '16px', accentColor: 'var(--accent)', flexShrink: 0 }}
                 />
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{label}</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{label}</span>
               </label>
             ))}
           </div>
@@ -157,23 +195,36 @@ export default function Classify() {
             disabled={loading || !form.system_name || !form.description}
             style={{
               width: '100%',
-              padding: '12px',
-              background: loading ? 'var(--bg-elevated)' : 'var(--accent)',
-              color: loading ? 'var(--text-secondary)' : '#000',
+              padding: '13px',
+              background: loading || !form.system_name || !form.description
+                ? 'var(--bg-elevated)'
+                : 'var(--accent)',
+              color: loading || !form.system_name || !form.description
+                ? 'var(--text-muted)'
+                : 'var(--bg-base)',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '8px',
               fontFamily: 'IBM Plex Mono, monospace',
               fontSize: '12px',
               fontWeight: 600,
               letterSpacing: '0.08em',
               cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             {loading ? 'CLASSIFYING...' : 'CLASSIFY SYSTEM →'}
           </button>
 
           {error && (
-            <div style={{ marginTop: '12px', padding: '10px', background: '#1a0a0a', border: '1px solid var(--danger)', borderRadius: '4px', fontSize: '13px', color: 'var(--danger)' }}>
+            <div style={{
+              marginTop: '12px',
+              padding: '12px 14px',
+              background: 'rgba(248,81,73,0.08)',
+              border: '1px solid var(--danger)',
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: 'var(--danger)',
+            }}>
               {error}
             </div>
           )}
@@ -183,47 +234,139 @@ export default function Classify() {
           {!result && !loading && (
             <div style={{
               height: '100%',
+              minHeight: '300px',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               border: '1px dashed var(--border)',
-              borderRadius: '6px',
+              borderRadius: '12px',
               color: 'var(--text-muted)',
-              fontSize: '13px',
-              fontFamily: 'IBM Plex Mono, monospace',
+              gap: '12px',
             }}>
-              Results will appear here
+              <div style={{ fontSize: '32px', opacity: 0.3 }}>⬡</div>
+              <div style={{
+                fontFamily: 'IBM Plex Mono, monospace',
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+              }}>
+                Results will appear here
+              </div>
             </div>
           )}
 
           {result && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '6px', padding: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              animation: 'slideUp 0.3s ease forwards',
+            }}>
+              <div style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '24px',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: '16px',
+                }}>
                   <div>
-                    <div style={{ fontSize: '11px', fontFamily: 'IBM Plex Mono, monospace', color: 'var(--text-secondary)', marginBottom: '4px' }}>CLASSIFICATION RESULT</div>
-                    <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{result.system_name}</div>
+                    <div style={{
+                      fontFamily: 'IBM Plex Mono, monospace',
+                      fontSize: '10px',
+                      color: 'var(--text-secondary)',
+                      letterSpacing: '0.08em',
+                      marginBottom: '4px',
+                    }}>
+                      CLASSIFICATION RESULT
+                    </div>
+                    <div style={{
+                      fontSize: '20px',
+                      fontWeight: 700,
+                      fontFamily: 'Inter, sans-serif',
+                      color: 'var(--text-primary)',
+                      letterSpacing: '-0.01em',
+                    }}>
+                      {result.system_name}
+                    </div>
                   </div>
                   <RiskBadge tier={result.risk_tier} />
                 </div>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                <p style={{
+                  fontSize: '13px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.7,
+                  marginBottom: '16px',
+                }}>
                   {result.justification}
                 </p>
-                <div style={{ marginTop: '12px', padding: '8px 12px', background: 'var(--bg-elevated)', borderRadius: '4px', display: 'inline-block' }}>
-                  <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: result.dpia_required ? 'var(--danger)' : 'var(--success)' }}>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  background: result.dpia_required
+                    ? 'rgba(248,81,73,0.08)'
+                    : 'rgba(63,185,80,0.08)',
+                  border: `1px solid ${result.dpia_required ? 'var(--danger)' : 'var(--success)'}`,
+                  borderRadius: '6px',
+                }}>
+                  <div style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: result.dpia_required ? 'var(--danger)' : 'var(--success)',
+                  }} />
+                  <span style={{
+                    fontFamily: 'IBM Plex Mono, monospace',
+                    fontSize: '11px',
+                    color: result.dpia_required ? 'var(--danger)' : 'var(--success)',
+                    fontWeight: 600,
+                  }}>
                     DPIA {result.dpia_required ? 'REQUIRED' : 'NOT REQUIRED'}
                   </span>
                 </div>
               </div>
 
-              <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '6px', padding: '24px' }}>
-                <div style={{ fontSize: '12px', fontFamily: 'IBM Plex Mono, monospace', color: 'var(--text-secondary)', marginBottom: '16px', letterSpacing: '0.06em' }}>
+              <div style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '24px',
+              }}>
+                <div style={{
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                  letterSpacing: '0.08em',
+                  marginBottom: '16px',
+                }}>
                   COMPLIANCE OBLIGATIONS ({result.obligations.length})
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {result.obligations.map((ob, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                      <span style={{ color: 'var(--accent)', fontFamily: 'IBM Plex Mono, monospace', flexShrink: 0 }}>
+                    <div key={i} style={{
+                      display: 'flex',
+                      gap: '12px',
+                      padding: '8px 0',
+                      borderBottom: i < result.obligations.length - 1
+                        ? '1px solid var(--border)'
+                        : 'none',
+                      fontSize: '13px',
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.5,
+                    }}>
+                      <span style={{
+                        fontFamily: 'IBM Plex Mono, monospace',
+                        fontSize: '11px',
+                        color: 'var(--accent)',
+                        flexShrink: 0,
+                        marginTop: '1px',
+                      }}>
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       {ob}
@@ -233,26 +376,34 @@ export default function Classify() {
               </div>
 
               <button
-                onClick={handleDownloadReport}
+                onClick={handleDownload}
                 disabled={downloading}
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '13px',
                   background: 'transparent',
                   color: 'var(--accent)',
                   border: '1px solid var(--accent)',
-                  borderRadius: '4px',
+                  borderRadius: '8px',
                   fontFamily: 'IBM Plex Mono, monospace',
                   fontSize: '12px',
                   fontWeight: 600,
                   letterSpacing: '0.08em',
                   cursor: downloading ? 'not-allowed' : 'pointer',
                   opacity: downloading ? 0.5 : 1,
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={e => {
+                  if (!downloading) {
+                    e.target.style.background = 'var(--accent-dim)'
+                  }
+                }}
+                onMouseLeave={e => {
+                  e.target.style.background = 'transparent'
                 }}
               >
                 {downloading ? 'GENERATING PDF...' : '↓ DOWNLOAD COMPLIANCE REPORT'}
               </button>
-
             </div>
           )}
         </div>

@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from typing import Optional
 from src.database.connection import get_db
 from src.database.models import ClassificationRule
+from src.routers.auth import verify_token
+from src.database.models import User
+
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -42,6 +45,13 @@ class RuleResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+@router.get("/rules", response_model=list[RuleResponse])
+def list_rules(
+    include_inactive: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token)
+):        
 
 
 @router.get("/rules", response_model=list[RuleResponse])

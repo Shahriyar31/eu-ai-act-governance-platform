@@ -1,3 +1,5 @@
+from src.routers.auth import verify_token
+from src.database.models import User
 from fastapi.responses import FileResponse
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -76,7 +78,11 @@ async def nvd_check_endpoint(request: NVDCheckRequest):
 
 
 @router.post("/classify", response_model=ClassificationResponse)
-async def classify_endpoint(request: ClassificationRequest, db: Session = Depends(get_db)):
+async def classify_endpoint(
+    request: ClassificationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token)
+):
     try:
         result = classify_ai_system(request, db)
         history = AssessmentHistory(
@@ -84,7 +90,8 @@ async def classify_endpoint(request: ClassificationRequest, db: Session = Depend
             sector=request.sector.value,
             risk_tier=result.risk_tier.value,
             dpia_required=result.dpia_required,
-            justification=result.justification
+            justification=result.justification,
+            user_id=current_user.id
         )
         db.add(history)
         db.commit()
@@ -171,8 +178,13 @@ async def get_report(report_id: str):
 
 
 @router.get("/history")
-def get_history(db: Session = Depends(get_db)):
-    records = db.query(AssessmentHistory).order_by(
+def get_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token)
+):
+    records = db.query(AssessmentHistory).filter(
+        AssessmentHistory.user_id == current_user.id
+    ).order_by(
         AssessmentHistory.assessed_at.desc()
     ).limit(50).all()
     return [
@@ -187,3 +199,4 @@ def get_history(db: Session = Depends(get_db)):
         }
         for r in records
     ]
+

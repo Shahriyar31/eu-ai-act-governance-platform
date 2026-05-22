@@ -8,6 +8,8 @@ from src.routers.governance import router as governance_router
 from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
 from src.database.init_db import init_db
+from src.routers.auth import router as auth_router
+
 
 @asynccontextmanager
 async def lifespan(app):
@@ -21,6 +23,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.include_router(auth_router)
 app.include_router(governance_router)
 app.include_router(admin_router)
 app.include_router(ai_router)
