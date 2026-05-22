@@ -8,14 +8,19 @@ const SECTORS = [
 ]
 
 export default function Classify() {
+  const [version, setVersion] = useState('v1') // V1 vs V2 switch state!
+  const [language, setLanguage] = useState('en') // German, French, Spanish flags state!
+  
   const [form, setForm] = useState({
     system_name: '',
     description: '',
+    intended_purpose: '', // New V2 attribute!
     sector: 'healthcare',
     automated_decision: false,
     processes_personal_data: false,
     interacts_with_humans: false,
   })
+  
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -28,10 +33,20 @@ export default function Classify() {
     setError(null)
     setResult(null)
     try {
-      const res = await classifySystem(form)
+      const payload = { ...form }
+      // If client orders from Window 1 (V1), strip off V2 healthy attributes!
+      if (version === 'v1') {
+        delete payload.intended_purpose
+      }
+      
+      const res = await classifySystem(payload, version)
       setResult(res.data)
     } catch (e) {
-      setError(e.response?.data?.detail || 'Classification failed')
+      const detail = e.response?.data?.detail
+      const msg = typeof detail === 'string' 
+        ? detail 
+        : (Array.isArray(detail) ? detail[0]?.msg : 'Classification failed')
+      setError(msg || 'Classification failed')
     } finally {
       setLoading(false)
     }
@@ -49,6 +64,7 @@ export default function Classify() {
         interacts_with_humans: form.interacts_with_humans,
         uses_llm: false,
         accepts_user_input: false,
+        language: language // On-the-fly flag selection passed to ReportLab!
       })
     } catch (e) {
       setError('Report download failed')
@@ -89,7 +105,7 @@ export default function Classify() {
           letterSpacing: '0.12em',
           marginBottom: '8px',
         }}>
-          EU AI ACT — ARTICLE 6 & ANNEX III
+          EU AI ACT COMPLIANCE PORTAL
         </div>
         <h1 style={{
           fontSize: '32px',
@@ -104,6 +120,54 @@ export default function Classify() {
         <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
           Classify an AI system into its EU AI Act risk tier and generate compliance obligations.
         </p>
+      </div>
+
+      {/* Feynman Cafeteria Version Selector Switch */}
+      <div style={{
+        display: 'flex',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '6px',
+        marginBottom: '28px',
+        gap: '8px',
+      }}>
+        {[
+          { id: 'v1', name: 'Window 1: Legacy V1 Engine', desc: 'GDPR, Risk Tiers, and Scanners' },
+          { id: 'v2', name: 'Window 2: Regulated V2 Act', desc: 'EU AI Act 2024 with Intended Purpose' }
+        ].map(opt => (
+          <button
+            key={opt.id}
+            onClick={() => {
+              setVersion(opt.id)
+              setResult(null)
+              setError(null)
+            }}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: version === opt.id ? 'var(--accent)' : 'transparent',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: version === opt.id ? 'var(--bg-base)' : 'var(--text-primary)',
+              fontFamily: 'Inter, sans-serif'
+            }}>{opt.name}</div>
+            <div style={{
+              fontSize: '10px',
+              color: version === opt.id ? 'rgba(0,0,0,0.6)' : 'var(--text-muted)',
+              fontFamily: 'IBM Plex Mono, monospace',
+              marginTop: '2px'
+            }}>{opt.desc}</div>
+          </button>
+        ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
@@ -146,6 +210,21 @@ export default function Classify() {
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
+
+          {/* Slide down Intended Purpose field if in Window 2 (V2) */}
+          {version === 'v2' && (
+            <div style={{ marginBottom: '20px', animation: 'slideUp 0.3s ease forwards' }}>
+              <label style={{ ...labelStyle, color: 'var(--accent)' }}>INTENDED PURPOSE (MANDATORY IN V2)</label>
+              <textarea
+                style={{ ...inputStyle, height: '80px', resize: 'vertical', borderColor: 'var(--accent)' }}
+                value={form.intended_purpose}
+                onChange={e => set('intended_purpose', e.target.value)}
+                placeholder="Specify the exact clinical/industrial goals (e.g. to assist ICU radiologists in crisis)..."
+                onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+                onBlur={e => e.target.style.borderColor = 'var(--accent)'}
+              />
+            </div>
+          )}
 
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>SECTOR</label>
@@ -192,14 +271,14 @@ export default function Classify() {
 
           <button
             onClick={handleSubmit}
-            disabled={loading || !form.system_name || !form.description}
+            disabled={loading || !form.system_name || !form.description || (version === 'v2' && !form.intended_purpose)}
             style={{
               width: '100%',
               padding: '13px',
-              background: loading || !form.system_name || !form.description
+              background: loading || !form.system_name || !form.description || (version === 'v2' && !form.intended_purpose)
                 ? 'var(--bg-elevated)'
                 : 'var(--accent)',
-              color: loading || !form.system_name || !form.description
+              color: loading || !form.system_name || !form.description || (version === 'v2' && !form.intended_purpose)
                 ? 'var(--text-muted)'
                 : 'var(--bg-base)',
               border: 'none',
@@ -282,7 +361,7 @@ export default function Classify() {
                       letterSpacing: '0.08em',
                       marginBottom: '4px',
                     }}>
-                      CLASSIFICATION RESULT
+                      CLASSIFICATION RESULT {version.toUpperCase()}
                     </div>
                     <div style={{
                       fontSize: '20px',
@@ -296,6 +375,18 @@ export default function Classify() {
                   </div>
                   <RiskBadge tier={result.risk_tier} />
                 </div>
+                
+                {/* Visual framework indicator stamp */}
+                <div style={{
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontSize: '10px',
+                  color: 'var(--accent)',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                }}>
+                  FRAMEWORK: {result.regulatory_framework || 'EU AI Act (Proposed)'}
+                </div>
+
                 <p style={{
                   fontSize: '13px',
                   color: 'var(--text-secondary)',
@@ -373,6 +464,44 @@ export default function Classify() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Dynamic Flag / Language Selector */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+              }}>
+                <label style={{
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                  margin: 0,
+                  flexGrow: 1
+                }}>COMPLIANCE REPORT LANGUAGE</label>
+                <select
+                  value={language}
+                  onChange={e => setLanguage(e.target.value)}
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    color: 'var(--text-primary)',
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  <option value="en">🇬🇧 English</option>
+                  <option value="de">🇩🇪 Deutsch</option>
+                  <option value="fr">🇫🇷 Français</option>
+                  <option value="es">🇪🇸 Español</option>
+                </select>
               </div>
 
               <button

@@ -378,3 +378,68 @@ def verify_ledger_endpoint(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/sandbox/tamper")
+def sandbox_tamper_endpoint(db: Session = Depends(get_db)):
+    """
+    Simulates a database breach / tamper by editing the latest block in place.
+    """
+    latest = db.query(AuditLedger).order_by(AuditLedger.id.desc()).first()
+    if not latest:
+        raise HTTPException(status_code=400, detail="No ledger records exist yet. Please perform a classification first!")
+    
+    if not latest.system_name.endswith(" (TAMPERED)"):
+        latest.system_name = latest.system_name + " (TAMPERED)"
+        db.commit()
+        
+    return {"status": "Tamper injected successfully!", "corrupted_id": latest.id}
+
+
+@router.post("/sandbox/restore")
+def sandbox_restore_endpoint(db: Session = Depends(get_db)):
+    """
+    Heals the ledger by restoring all tampered fields back to their original state.
+    """
+    rows = db.query(AuditLedger).all()
+    healed_count = 0
+    for row in rows:
+        if row.system_name.endswith(" (TAMPERED)"):
+            row.system_name = row.system_name.replace(" (TAMPERED)", "")
+            healed_count += 1
+            
+    db.commit()
+    return {"status": f"Ledger self-healed successfully! {healed_count} blocks restored."}
+
+
+@router.post("/sandbox/traffic")
+def sandbox_traffic_endpoint(db: Session = Depends(get_db)):
+    """
+    Simulates high-traffic auditing by inserting 5 randomized compliant transactions.
+    """
+    import random
+    MOCK_SYSTEMS = [
+        ("MedSentry Diagnostics", "healthcare", "minimal"),
+        ("ResumeRanker HR", "employment", "high"),
+        ("SmartGrades Evaluator", "education", "limited"),
+        ("CreditScore AI", "finance", "high"),
+        ("SafeDrive Autonomous", "critical_infrastructure", "high")
+    ]
+    for _ in range(5):
+        sys_name, sector, risk = random.choice(MOCK_SYSTEMS)
+        payload = {
+            "system_name": sys_name,
+            "description": f"Automated assessment running under {sector}.",
+            "sector": sector,
+            "risk_tier": risk,
+            "dpia_required": risk == "high",
+            "justification": f"System deployed in regulated {sector} sector."
+        }
+        append_audit_entry(
+            db=db,
+            action="FULL_ASSESSMENT_PDF",
+            system_name=sys_name,
+            payload_data=payload
+        )
+    return {"status": "5 compliance transactions successfully signed and chained!"}
+
+

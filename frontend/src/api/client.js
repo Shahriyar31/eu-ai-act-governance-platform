@@ -5,8 +5,19 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-export const classifySystem = (data) =>
-  api.post('/api/v1/classify', data)
+// 🔑 THE FIX: Interceptor — attach JWT token before EVERY request
+// Think of it as a checkpoint guard that checks your badge before
+// letting Messenger B (this api instance) leave the building!
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
+  }
+  return config
+})
+
+export const classifySystem = (data, version = 'v1') =>
+  api.post(version === 'v2' ? '/api/v2/classify' : '/api/v1/classify', data)
 
 export const runFullAssessment = (data) =>
   api.post('/api/v1/assess', data)
@@ -29,13 +40,30 @@ export const deactivateRule = (id) =>
 export const getHistory = () =>
   api.get('/api/v1/history')
 
+export const verifyLedger = () =>
+  api.get('/api/v1/verify-ledger')
+
+export const injectTamper = () =>
+  api.post('/api/v1/sandbox/tamper')
+
+export const restoreLedger = () =>
+  api.post('/api/v1/sandbox/restore')
+
+export const generateTraffic = () =>
+  api.post('/api/v1/sandbox/traffic')
+
 export default api
 
 
+// Also fix downloadReport — it uses raw fetch(), so we attach the token manually
 export const downloadReport = async (data) => {
+  const token = localStorage.getItem('auth_token')
   const response = await fetch('/api/v1/assess-and-download', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
     body: JSON.stringify(data)
   })
   if (!response.ok) throw new Error('Report generation failed')
