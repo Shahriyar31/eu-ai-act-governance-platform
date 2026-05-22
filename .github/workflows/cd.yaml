@@ -3,31 +3,19 @@ name: CD — Deploy to Azure Container Apps
 # ─────────────────────────────────────────────────────────────
 # 🏭 THE FEYNMAN ANALOGY: The Pop-Up Restaurant
 #
-# AKS is like building a permanent restaurant with full staff,
-# kitchen, tables — expensive and always running.
-#
-# Azure Container Apps is like a pop-up restaurant:
-# - It spins up when customers arrive (requests come in)
-# - It scales DOWN to zero when no one is there (you pay nothing!)
-# - Azure manages all the plumbing (load balancer, TLS, scaling)
-# - Perfect for a student account with quota limits!
-#
-# This pipeline:
-# 1. Waits for the CI Quality Inspector to give the green light
-# 2. Logs into Azure
-# 3. Creates the Container App Environment if it doesn't exist
-# 4. Creates OR updates the Container App with the new image
-# 5. Prints the live public URL where your app is accessible!
+# AKS is like building a permanent restaurant — expensive.
+# Azure Container Apps is like a pop-up stall:
+# - Spins up when customers arrive, scales to zero when idle
+# - Azure manages all the plumbing (HTTPS, load balancer)
+# - Works perfectly on Azure Student accounts!
 # ─────────────────────────────────────────────────────────────
 
 on:
-  # Auto-trigger after CI pipeline succeeds on main
   workflow_run:
     workflows: ["DevSecOps Security Pipeline"]
     types: [completed]
     branches: [main]
 
-  # Manual trigger — useful for redeployments or rollbacks
   workflow_dispatch:
     inputs:
       image_tag:
@@ -40,10 +28,8 @@ env:
   ACR_LOGIN_SERVER: euaigovernanceacr.azurecr.io
   RESOURCE_GROUP: rg-eu-ai-governance
   LOCATION: germanywestcentral
-  # Container Apps resource names
   CONTAINER_APP_ENV_NAME: cae-eu-ai-governance
   CONTAINER_APP_NAME: ca-eu-ai-governance
-  # Your PostgreSQL server FQDN (from Terraform output)
   DB_HOST: psql-eu-ai-gov.postgres.database.azure.com
 
 jobs:
@@ -51,10 +37,6 @@ jobs:
     name: 🚀 Deploy to Azure Container Apps
     runs-on: ubuntu-latest
 
-    # ─────────────────────────────────────────────────────────
-    # SAFETY GATE: Only deploy if CI passed.
-    # If CI failed (security issues found), we stop here.
-    # ─────────────────────────────────────────────────────────
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
@@ -64,27 +46,36 @@ jobs:
       id-token: write
 
     steps:
-      # ──────────────────────────────────────────────────────
-      # STEP 1: Get the code
-      # ──────────────────────────────────────────────────────
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
       # ──────────────────────────────────────────────────────
-      # STEP 2: Authenticate to Azure
-      # Uses the AZURE_CREDENTIALS secret you already have!
+      # CRITICAL FIX: Install the containerapp CLI extension.
+      #
+      # Feynman: The GitHub Actions runner is like a fresh
+      # laptop out of the box. Azure CLI is installed, but
+      # 'az containerapp' is a plugin that must be added first —
+      # like installing a new app on your phone before using it.
       # ──────────────────────────────────────────────────────
+      - name: 🔧 Install Azure Container Apps CLI extension
+        run: az extension add --name containerapp --upgrade --yes
+
       - name: 🔐 Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       # ──────────────────────────────────────────────────────
-      # STEP 3: Decide which image tag to deploy
-      #
-      # Triggered by CI → use the exact commit SHA for traceability
-      # Triggered manually → use whatever the user typed (default: latest)
+      # Register the Microsoft.App provider (needed once per
+      # subscription — safe to re-run, it's idempotent).
+      # Without this, az containerapp env create fails with
+      # "resource provider not registered" on student accounts.
       # ──────────────────────────────────────────────────────
+      - name: 📋 Register Azure Container Apps provider
+        run: |
+          az provider register --namespace Microsoft.App --wait
+          az provider register --namespace Microsoft.OperationalInsights --wait
+
       - name: 🏷️ Resolve image tag
         id: tag
         run: |
@@ -94,16 +85,14 @@ jobs:
             TAG="${{ github.event.workflow_run.head_sha }}"
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Deploying: ${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:$TAG"
+          echo "Deploying image tag: $TAG"
 
       # ──────────────────────────────────────────────────────
-      # STEP 4: Get ACR credentials so Container Apps can
-      #         pull our Docker image from the private registry.
-      #
-      # Feynman: Give the pop-up restaurant the warehouse key
-      # so they can go pick up the food (Docker image).
+      # Enable ACR admin so Container Apps can pull the image.
+      # We mask the password immediately so it never shows
+      # in plain text anywhere in the GitHub Actions logs.
       # ──────────────────────────────────────────────────────
-      - name: 🔑 Enable ACR admin and get credentials
+      - name: 🔑 Enable ACR admin and get pull credentials
         id: acr
         run: |
           az acr update --name ${{ env.ACR_NAME }} --admin-enabled true
@@ -114,61 +103,51 @@ jobs:
             --name ${{ env.ACR_NAME }} \
             --query "passwords[0].value" -o tsv)
           echo "username=$ACR_USERNAME" >> $GITHUB_OUTPUT
-          # Mask the password so it never appears in logs
           echo "::add-mask::$ACR_PASSWORD"
           echo "password=$ACR_PASSWORD" >> $GITHUB_OUTPUT
 
       # ──────────────────────────────────────────────────────
-      # STEP 5: Create Container Apps Environment if needed
-      #
-      # The Environment is the secure network boundary that
-      # wraps your Container Apps — like the building that
-      # hosts multiple pop-up restaurant stalls.
-      # Only needs to be created ONCE. After that this step
-      # is skipped automatically (idempotent).
+      # Create the Container Apps Environment if it doesn't
+      # exist yet. Safe to skip if already provisioned.
       # ──────────────────────────────────────────────────────
       - name: 🏗️ Create Container Apps Environment (if not exists)
         run: |
           if az containerapp env show \
-            --name ${{ env.CONTAINER_APP_ENV_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --output none 2>/dev/null; then
-            echo "✅ Environment already exists — skipping creation."
+               --name ${{ env.CONTAINER_APP_ENV_NAME }} \
+               --resource-group ${{ env.RESOURCE_GROUP }} \
+               --output none 2>/dev/null; then
+            echo "✅ Environment already exists — skipping."
           else
             echo "🔨 Creating Container Apps Environment..."
             az containerapp env create \
               --name ${{ env.CONTAINER_APP_ENV_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --location ${{ env.LOCATION }}
-            echo "✅ Environment created."
+            echo "✅ Environment ready."
           fi
 
       # ──────────────────────────────────────────────────────
-      # STEP 6: Create or Update the Container App
-      #
-      # First push → CREATES the app with all settings
-      # All subsequent pushes → UPDATES only the image tag
-      #
-      # Feynman: First time = open the pop-up stall.
-      #          Every push after = swap the menu for the day.
+      # Create or update the Container App.
+      # First run  → full create with env vars and secrets
+      # Later runs → image-only update (fast rolling deploy)
       # ──────────────────────────────────────────────────────
       - name: 🐳 Create or Update Container App
         run: |
           IMAGE="${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ steps.tag.outputs.tag }}"
 
           if az containerapp show \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --output none 2>/dev/null; then
+               --name ${{ env.CONTAINER_APP_NAME }} \
+               --resource-group ${{ env.RESOURCE_GROUP }} \
+               --output none 2>/dev/null; then
 
-            echo "🔄 Container App exists — updating image to: $IMAGE"
+            echo "🔄 Updating existing Container App image to: $IMAGE"
             az containerapp update \
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image "$IMAGE"
 
           else
-            echo "🆕 Container App not found — creating from scratch..."
+            echo "🆕 Creating new Container App..."
             az containerapp create \
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -183,28 +162,21 @@ jobs:
               --max-replicas 3 \
               --cpu 0.5 \
               --memory 1.0Gi \
-              --env-vars \
-                DB_HOST="${{ env.DB_HOST }}" \
-                DB_USER="pgadmin" \
-                DB_NAME="euaigovernance" \
-                DB_PORT="5432" \
-                DB_PASSWORD=secretref:db-password \
-                JWT_SECRET=secretref:jwt-secret \
-                GROQ_API_KEY=secretref:groq-api-key \
               --secrets \
-                db-password="${{ secrets.DB_PASSWORD }}" \
-                jwt-secret="${{ secrets.JWT_SECRET }}" \
-                groq-api-key="${{ secrets.GROQ_API_KEY }}"
+                "db-password=${{ secrets.DB_PASSWORD }}" \
+                "jwt-secret=${{ secrets.JWT_SECRET }}" \
+                "groq-api-key=${{ secrets.GROQ_API_KEY }}" \
+              --env-vars \
+                "DB_HOST=${{ env.DB_HOST }}" \
+                "DB_USER=pgadmin" \
+                "DB_NAME=euaigovernance" \
+                "DB_PORT=5432" \
+                "DB_PASSWORD=secretref:db-password" \
+                "JWT_SECRET=secretref:jwt-secret" \
+                "GROQ_API_KEY=secretref:groq-api-key"
             echo "✅ Container App created."
           fi
 
-      # ──────────────────────────────────────────────────────
-      # STEP 7: Print the live public URL
-      #
-      # Azure Container Apps automatically provisions a public
-      # HTTPS URL with a free TLS certificate. This step prints
-      # it so you can click it straight from the GitHub Actions log!
-      # ──────────────────────────────────────────────────────
       - name: 🌐 Print live application URL
         run: |
           FQDN=$(az containerapp show \
@@ -214,7 +186,7 @@ jobs:
             --output tsv)
           echo "============================================"
           echo "  ✅ DEPLOYMENT COMPLETE!"
-          echo "  🌐 Live URL: https://$FQDN"
+          echo "  🌐 App URL:  https://$FQDN"
           echo "  📄 Swagger:  https://$FQDN/api/v1/docs"
           echo "  📊 V2 Docs:  https://$FQDN/api/v2/docs"
           echo "============================================"
