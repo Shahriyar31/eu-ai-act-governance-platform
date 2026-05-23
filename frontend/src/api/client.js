@@ -5,19 +5,99 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-// 🔑 THE FIX: Interceptor — attach JWT token before EVERY request
-// Think of it as a checkpoint guard that checks your badge before
-// letting Messenger B (this api instance) leave the building!
+// tracks whether a refresh is already in progress
+// prevents multiple simultaneous refresh calls when several requests fail at once
+let isRefreshing = false
+
+// queue of requests that failed while refresh was in progress
+// they all get retried once the new token arrives
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error)
+    else resolve(token)
+  })
+  failedQueue = []
+}
+
+// attach access token to every outgoing request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token')
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`
-  }
+  if (token) config.headers['Authorization'] = `Bearer ${token}`
   return config
 })
 
-export const classifySystem = (data, version = 'v1') =>
-  api.post(version === 'v2' ? '/api/v2/classify' : '/api/v1/classify', data)
+// catch 401 responses and transparently refresh the token
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
+
+    // only intercept 401 errors that haven't already been retried
+    if (error.response?.status === 401 && !originalRequest._retry) {
+
+      // if refresh is already happening, queue this request
+      // it will be retried once the refresh completes
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers['Authorization'] = `Bearer ${token}`
+          return api(originalRequest)
+        }).catch(err => Promise.reject(err))
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      const refreshToken = localStorage.getItem('refresh_token')
+
+      if (!refreshToken) {
+        // no refresh token means user must log in again
+        window.location.href = '/login'
+        return Promise.reject(error)
+      }
+
+      try {
+        // call refresh endpoint with the stored refresh token
+        const response = await axios.post('/auth/refresh', {
+          refresh_token: refreshToken
+        })
+
+        const { access_token, refresh_token: newRefreshToken } = response.data
+
+        // store new tokens — old refresh token is now revoked on server
+        localStorage.setItem('auth_token', access_token)
+        localStorage.setItem('refresh_token', newRefreshToken)
+        axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
+
+        // retry all queued requests with the new token
+        processQueue(null, access_token)
+
+        // retry the original request that triggered the 401
+        originalRequest.headers['Authorization'] = `Bearer ${access_token}`
+        return api(originalRequest)
+
+      } catch (refreshError) {
+        // refresh failed — session is truly expired, force login
+        processQueue(refreshError, null)
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('refresh_token')
+        localStorage.removeItem('auth_user')
+        window.location.href = '/login'
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)
+
+export const classifySystem = (data) =>
+  api.post('/api/v1/classify', data)
 
 export const runFullAssessment = (data) =>
   api.post('/api/v1/assess', data)
@@ -40,22 +120,6 @@ export const deactivateRule = (id) =>
 export const getHistory = () =>
   api.get('/api/v1/history')
 
-export const verifyLedger = () =>
-  api.get('/api/v1/verify-ledger')
-
-export const injectTamper = () =>
-  api.post('/api/v1/sandbox/tamper')
-
-export const restoreLedger = () =>
-  api.post('/api/v1/sandbox/restore')
-
-export const generateTraffic = () =>
-  api.post('/api/v1/sandbox/traffic')
-
-export default api
-
-
-// Also fix downloadReport — it uses raw fetch(), so we attach the token manually
 export const downloadReport = async (data) => {
   const token = localStorage.getItem('auth_token')
   const response = await fetch('/api/v1/assess-and-download', {
@@ -77,3 +141,5 @@ export const downloadReport = async (data) => {
   document.body.removeChild(a)
   window.URL.revokeObjectURL(url)
 }
+
+export default api

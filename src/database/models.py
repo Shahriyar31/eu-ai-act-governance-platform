@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from src.database.connection import Base
 from pgvector.sqlalchemy import Vector
 
+
 class ClassificationRule(Base):
     __tablename__ = "classification_rules"
     id = Column(Integer, primary_key=True, index=True)
@@ -18,6 +19,7 @@ class ClassificationRule(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
 class AssessmentHistory(Base):
     __tablename__ = "assessment_history"
     id = Column(Integer, primary_key=True, index=True)
@@ -29,6 +31,7 @@ class AssessmentHistory(Base):
     assessed_at = Column(DateTime(timezone=True), server_default=func.now())
     user_id = Column(Integer, nullable=True)
 
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -37,6 +40,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class AuditLedger(Base):
     __tablename__ = "audit_ledger"
@@ -49,23 +53,22 @@ class AuditLedger(Base):
     record_hash = Column(String, nullable=False)
     signature = Column(String, nullable=False)
 
+
 class ChunkEmbedding(Base):
     __tablename__ = "chunk_embeddings"
-
-    # string ID matching the chunk ID from knowledge_base.json
     id = Column(String, primary_key=True)
-
-    # human-readable title e.g. "EU AI Act — Article 26"
     title = Column(String, nullable=False)
-
-    # which regulation this chunk came from
     regulation = Column(String, nullable=True)
-
-    # the actual text content of the chunk
     content = Column(Text, nullable=False)
-
-    # the vector embedding — 384 dimensions from bge-small-en-v1.5
-    # this is the core pgvector column
     embedding = Column(Vector(384), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, nullable=False, index=True)
+    user_id = Column(Integer, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_revoked = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

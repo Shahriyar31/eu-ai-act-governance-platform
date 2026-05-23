@@ -1,5 +1,5 @@
 from src.database.connection import engine, Base
-from src.database.models import ClassificationRule, AssessmentHistory, User, AuditLedger
+from src.database.models import ClassificationRule, AssessmentHistory, User, AuditLedger, RefreshToken
 
 def init_db():
     Base.metadata.create_all(bind=engine)

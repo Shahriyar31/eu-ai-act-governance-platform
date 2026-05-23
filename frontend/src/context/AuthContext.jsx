@@ -19,10 +19,13 @@ export function AuthProvider({ children }) {
 
   const register = async (username, email, password) => {
     const res = await axios.post('/auth/register', { username, email, password })
-    const { access_token, username: name, email: userEmail } = res.data
+    const { access_token, refresh_token, username: name, email: userEmail } = res.data
     const userData = { username: name, email: userEmail }
+
     localStorage.setItem('auth_token', access_token)
+    localStorage.setItem('refresh_token', refresh_token)
     localStorage.setItem('auth_user', JSON.stringify(userData))
+
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
     setUser(userData)
     return res.data
@@ -30,17 +33,29 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await axios.post('/auth/login', { email, password })
-    const { access_token, username: name, email: userEmail } = res.data
+    const { access_token, refresh_token, username: name, email: userEmail } = res.data
     const userData = { username: name, email: userEmail }
+
     localStorage.setItem('auth_token', access_token)
+    localStorage.setItem('refresh_token', refresh_token)
     localStorage.setItem('auth_user', JSON.stringify(userData))
+
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
     setUser(userData)
     return res.data
   }
 
-  const logout = () => {
+  const logout = async () => {
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (refreshToken) {
+      try {
+        await axios.post('/auth/logout', { refresh_token: refreshToken })
+      } catch {
+        // logout even if server call fails
+      }
+    }
     localStorage.removeItem('auth_token')
+    localStorage.removeItem('refresh_token')
     localStorage.removeItem('auth_user')
     delete axios.defaults.headers.common['Authorization']
     setUser(null)

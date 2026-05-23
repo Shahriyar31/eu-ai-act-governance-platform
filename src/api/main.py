@@ -7,6 +7,7 @@ from pathlib import Path
 from prometheus_fastapi_instrumentator import Instrumentator
 
 # Import counters from dedicated metrics module — not defined here anymore
+from src.routers.agent import router as agent_router
 from src.metrics import assessments_total, risk_tier_total
 from src.routers.governance import router as governance_router
 from src.routers.admin import router as admin_router
@@ -60,6 +61,7 @@ app.include_router(governance_router)
 app.include_router(admin_router)
 app.include_router(ai_router, prefix="/api/v1")
 app.include_router(auth_router)
+app.include_router(agent_router)
 
 @app.get("/health")
 def health_check():

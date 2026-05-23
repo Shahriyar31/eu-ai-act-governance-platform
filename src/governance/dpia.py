@@ -143,7 +143,7 @@ def _identify_mitigations(request: DPIARequest, risks: list) -> list:
 def _generate_summary(request: DPIARequest, risks: list) -> str:
     return (
         f"This DPIA covers the processing of personal data by '{request.system_name}' "
-        f"operating in the {request.sector} sector. "
+        f"operating in the {request.sector.value} sector. "
         f"The system processes {request.data_types} belonging to {request.data_subjects} "
         f"for the purpose of {request.processing_purpose}. "
         f"Based on the EU AI Act risk classification of '{request.risk_tier}' and the nature "

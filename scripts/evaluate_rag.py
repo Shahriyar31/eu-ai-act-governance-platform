@@ -7,7 +7,7 @@ Requires:
 - data/knowledge_base.json present
 
 Run with:
-    PYTHONPATH=. python scripts/evaluate_rag.py
+    python scripts/evaluate_rag.py
 """
 
 import os
@@ -22,11 +22,12 @@ load_dotenv()
 from ragas import evaluate, EvaluationDataset, SingleTurnSample
 from ragas.metrics import Faithfulness, AnswerRelevancy, ContextPrecision, ContextRecall
 from ragas.llms import LangchainLLMWrapper
+from ragas.embeddings import LangchainEmbeddingsWrapper
 from langchain_groq import ChatGroq
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 
 API_BASE = "http://localhost:8001"
 
-# load knowledge base so we can look up full chunk content by ID
 with open("data/knowledge_base.json", "r") as f:
     KB = {chunk["id"]: chunk for chunk in json.load(f)}
 
@@ -75,19 +76,18 @@ TEST_SET = [
 
 
 def get_rag_response(question: str) -> tuple[str, list[str]]:
-    """
-    Call the running API to get answer and source IDs.
-    Look up full context text from knowledge_base.json by source ID.
-    """
+    """Call running API and return answer + context texts."""
     response = requests.post(
         f"{API_BASE}/api/v1/ai/ask",
         json={"question": question},
         timeout=60
     )
     data = response.json()
-    answer = data["answer"]
 
-    # look up full content for each returned source ID
+    if "answer" not in data:
+        raise ValueError(f"Unexpected API response: {data}")
+
+    answer = data["answer"]
     contexts = []
     for source in data.get("sources", []):
         chunk_id = source["id"]
@@ -106,7 +106,6 @@ def build_dataset() -> EvaluationDataset:
         print(f"  Question {i+1}/{len(TEST_SET)}: {item['question'][:60]}...")
         try:
             answer, contexts = get_rag_response(item["question"])
-
             sample = SingleTurnSample(
                 user_input=item["question"],
                 response=answer,
@@ -114,10 +113,7 @@ def build_dataset() -> EvaluationDataset:
                 reference=item["ground_truth"]
             )
             samples.append(sample)
-
-            # pause between questions to avoid Groq rate limits
             time.sleep(4)
-
         except Exception as e:
             print(f"  ERROR on question {i+1}: {e}")
 
@@ -125,31 +121,10 @@ def build_dataset() -> EvaluationDataset:
     return EvaluationDataset(samples=samples)
 
 
-def get_rag_response(question: str) -> tuple[str, list[str]]:
-    response = requests.post(
-        f"{API_BASE}/api/v1/ai/ask",
-        json={"question": question},
-        timeout=60
-    )
-    data = response.json()
-    
-    # show the actual response so we can debug
-    if "answer" not in data:
-        raise ValueError(f"Unexpected response: {data}")
-    
-    answer = data["answer"]
-    contexts = []
-    for source in data.get("sources", []):
-        chunk_id = source["id"]
-        if chunk_id in KB:
-            contexts.append(KB[chunk_id]["content"])
-
-    return answer, contexts
-
 def run_evaluation():
     groq_api_key = os.getenv("GROQ_API_KEY")
 
-    # use Groq as the judge LLM for RAGAS evaluation
+    # Groq as judge LLM
     judge_llm = LangchainLLMWrapper(
         ChatGroq(
             model="llama-3.3-70b-versatile",
@@ -158,10 +133,16 @@ def run_evaluation():
         )
     )
 
+    # FastEmbed for embeddings — avoids needing OpenAI key
+    # same model used by the RAG pipeline itself
+    embeddings = LangchainEmbeddingsWrapper(
+        FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+    )
+
     dataset = build_dataset()
 
-    print("\nRunning RAGAS evaluation metrics...")
-    print("Groq judges each answer for faithfulness, relevancy, precision, recall.\n")
+    print("\nRunning RAGAS evaluation...")
+    print("Groq judges answers. FastEmbed computes semantic similarity.\n")
 
     result = evaluate(
         dataset=dataset,
@@ -171,16 +152,17 @@ def run_evaluation():
             ContextPrecision(),
             ContextRecall()
         ],
-        llm=judge_llm
+        llm=judge_llm,
+        embeddings=embeddings
     )
 
     print("\n" + "="*50)
     print("RAGAS EVALUATION RESULTS")
     print("="*50)
-    print(f"Faithfulness:      {result['faithfulness']:.4f}")
-    print(f"Answer Relevancy:  {result['answer_relevancy']:.4f}")
-    print(f"Context Precision: {result['context_precision']:.4f}")
-    print(f"Context Recall:    {result['context_recall']:.4f}")
+    print(f"Faithfulness:      {result['faithfulness']:.4f}  (1.0 = no hallucination)")
+    print(f"Answer Relevancy:  {result['answer_relevancy']:.4f}  (1.0 = perfectly on-topic)")
+    print(f"Context Precision: {result['context_precision']:.4f}  (1.0 = all chunks relevant)")
+    print(f"Context Recall:    {result['context_recall']:.4f}  (1.0 = found all needed info)")
     print("="*50)
 
     os.makedirs("data/evaluations", exist_ok=True)
@@ -191,6 +173,7 @@ def run_evaluation():
         "timestamp": timestamp,
         "model": "llama-3.3-70b-versatile",
         "evaluator": "RAGAS 0.2.15",
+        "embeddings": "BAAI/bge-small-en-v1.5",
         "knowledge_base_chunks": 423,
         "test_questions": len(TEST_SET),
         "scores": {
