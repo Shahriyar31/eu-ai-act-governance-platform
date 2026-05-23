@@ -31,6 +31,18 @@ class AssessmentHistory(Base):
     assessed_at = Column(DateTime(timezone=True), server_default=func.now())
     user_id = Column(Integer, nullable=True)
 
+    # which organisation this assessment belongs to
+    org_id = Column(Integer, nullable=True)
+
+class Organisation(Base):
+    __tablename__ = "organisations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    slug = Column(String, unique=True, nullable=False, index=True)
+    plan = Column(String, default="free", nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class User(Base):
     __tablename__ = "users"
@@ -40,6 +52,13 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # which organisation this user belongs to
+    # nullable=True so existing users without an org don't break
+    org_id = Column(Integer, nullable=True)
+
+    # role within the organisation
+    role = Column(String, default="analyst", nullable=True)
 
 
 class AuditLedger(Base):

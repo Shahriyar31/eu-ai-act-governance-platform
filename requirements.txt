@@ -39,3 +39,4 @@ firecrawl-py==1.8.0
 firecrawl-py==1.8.0
 pgvector==0.3.6
 ragas==0.2.15
+alembic==1.13.3
