@@ -49,4 +49,5 @@ pytest==8.3.5
 pytest-asyncio==0.24.0
 
 
-langchain-google-genai==4.2.3langchain-groq==0.3.2
+langchain-google-genai==4.2.3
+langchain-groq==0.3.2
