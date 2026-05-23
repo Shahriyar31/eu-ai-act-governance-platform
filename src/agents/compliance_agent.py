@@ -1,19 +1,15 @@
 """
-LangGraph Compliance Workflow Agent.
-
-Takes an AI system description and automatically runs the full
-compliance pipeline — classification, DPIA, OWASP — making decisions
-about which steps to run based on the risk tier found.
+LangGraph Compliance Workflow Agent with Human-in-the-Loop.
 
 Graph structure:
-    START → classify → [router] → dpia → owasp → summary → END
+    START → classify → [router] → clarification (interrupt) → dpia → owasp → summary → END
                                ↘ summary → END (minimal/unacceptable)
 """
 
-from langchain_core.messages import HumanMessage
-from src.ai.llm_factory import get_agent_llm, ModelLogger
 from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import interrupt
 from src.database.connection import SessionLocal
 from src.models.schemas import (
     ClassificationRequest, DPIARequest, OWASPRequest,
@@ -22,14 +18,11 @@ from src.models.schemas import (
 from src.governance.classifier import classify_ai_system
 from src.governance.dpia import generate_dpia
 from src.governance.owasp import check_owasp_llm
+from langchain_core.messages import HumanMessage
+from src.ai.llm_factory import get_agent_llm, ModelLogger
 
 
 class ComplianceState(TypedDict):
-    """
-    The shared notepad passed between every node in the graph.
-    Each node reads what it needs and writes its results back.
-    """
-    # inputs — set at the start, never change
     system_name: str
     description: str
     sector: str
@@ -39,26 +32,69 @@ class ComplianceState(TypedDict):
     uses_llm: bool
     accepts_user_input: bool
 
-    # outputs — filled in as nodes run
     risk_tier: str
     dpia_required: bool
     classification_justification: str
     classification_obligations: list
 
-    # optional — only filled if the router decides to run them
+    clarification_questions: list
+    user_clarifications: Optional[str]
+
     dpia_assessment: Optional[dict]
     owasp_assessment: Optional[dict]
 
-    # final output
     final_summary: str
     steps_completed: list
 
 
+def _generate_clarification_questions(state: ComplianceState) -> list[str]:
+    risk_tier = state["risk_tier"]
+    sector = state["sector"]
+    questions = []
+
+    if risk_tier == "high":
+        questions.append(
+            "Does this system make final decisions automatically with no human reviewing "
+            "each case, or does a human always review the AI recommendation before it takes effect?"
+        )
+
+    if sector == "employment":
+        questions.append(
+            "Will candidates be informed that AI is used to screen or rank them, "
+            "and will they have a right to request human review?"
+        )
+    elif sector == "healthcare":
+        questions.append(
+            "Does this system directly influence clinical decisions such as diagnosis, "
+            "treatment selection, or medication dosing?"
+        )
+    elif sector == "education":
+        questions.append(
+            "Does this system make or influence decisions about student admission, "
+            "assessment scores, or academic progression?"
+        )
+    elif sector == "finance":
+        questions.append(
+            "Does this system make credit scoring, loan approval, or insurance risk "
+            "decisions that directly affect individuals?"
+        )
+    else:
+        questions.append(
+            "Will this system affect individuals in ways they cannot easily contest "
+            "or appeal, and are those individuals aware the system exists?"
+        )
+
+    if state["processes_personal_data"]:
+        questions.append(
+            "What categories of personal data does this system process? "
+            "For example: names and emails only, or sensitive data such as "
+            "health records, ethnicity, biometrics, or financial history?"
+        )
+
+    return questions[:3]
+
+
 def classify_node(state: ComplianceState) -> dict:
-    """
-    Node 1: Classify the AI system's EU AI Act risk tier.
-    Reads from DB rules, returns risk tier and obligations.
-    """
     db = SessionLocal()
     try:
         request = ClassificationRequest(
@@ -70,7 +106,6 @@ def classify_node(state: ComplianceState) -> dict:
             interacts_with_humans=state["interacts_with_humans"]
         )
         result = classify_ai_system(request, db)
-
         return {
             "risk_tier": result.risk_tier.value,
             "dpia_required": result.dpia_required,
@@ -82,11 +117,29 @@ def classify_node(state: ComplianceState) -> dict:
         db.close()
 
 
+def clarification_node(state: ComplianceState) -> dict:
+    """
+    Pause point. Generates questions based on what classification found,
+    then calls interrupt() to wait for the user's answers.
+    After the user responds, interrupt() returns their answers and
+    the graph continues to dpia_node.
+    """
+    questions = _generate_clarification_questions(state)
+
+    # interrupt() saves the entire graph state to the checkpointer,
+    # then pauses. The value passed in (questions) is stored as
+    # interrupt metadata — readable from outside the graph.
+    # When the user sends answers, interrupt() returns those answers.
+    user_answer = interrupt(questions)
+
+    return {
+        "clarification_questions": questions,
+        "user_clarifications": str(user_answer),
+        "steps_completed": state["steps_completed"] + ["clarification"]
+    }
+
+
 def dpia_node(state: ComplianceState) -> dict:
-    """
-    Node 2: Generate a GDPR Data Protection Impact Assessment.
-    Only runs for HIGH and LIMITED risk systems.
-    """
     request = DPIARequest(
         system_name=state["system_name"],
         description=state["description"],
@@ -97,7 +150,6 @@ def dpia_node(state: ComplianceState) -> dict:
         risk_tier=RiskTierEnum(state["risk_tier"])
     )
     result = generate_dpia(request)
-
     return {
         "dpia_assessment": {
             "required": result.dpia_required,
@@ -111,10 +163,6 @@ def dpia_node(state: ComplianceState) -> dict:
 
 
 def owasp_node(state: ComplianceState) -> dict:
-    """
-    Node 3: Run OWASP LLM Top 10 security assessment.
-    Runs after DPIA for high/limited risk systems.
-    """
     request = OWASPRequest(
         system_name=state["system_name"],
         description=state["description"],
@@ -124,7 +172,6 @@ def owasp_node(state: ComplianceState) -> dict:
         has_access_to_external_systems=False
     )
     result = check_owasp_llm(request)
-
     return {
         "owasp_assessment": {
             "risks_found": result.risks_found,
@@ -136,11 +183,17 @@ def owasp_node(state: ComplianceState) -> dict:
 
 
 def summary_node(state: ComplianceState) -> dict:
-    """
-    Final node: use Gemini 2.5 Pro to synthesise all findings into
-    a professional compliance report. Falls back to Groq if needed.
-    """
     risk_tier = state["risk_tier"]
+
+    clarification_section = ""
+    if state.get("user_clarifications"):
+        clarification_section = f"""
+CLARIFICATIONS PROVIDED BY THE ORGANISATION:
+Questions asked: {state.get('clarification_questions', [])}
+Answers received: {state['user_clarifications']}
+
+Use these answers to make the report more specific and accurate.
+"""
 
     dpia_section = ""
     if state.get("dpia_assessment"):
@@ -166,15 +219,15 @@ Recommendations: {', '.join(owasp['recommendations'][:3])}
     prohibited_note = ""
     if risk_tier == "unacceptable":
         prohibited_note = (
-            "IMPORTANT: This system is classified as PROHIBITED under EU AI Act Article 5. "
-            "Address this in your report with appropriate urgency."
+            "IMPORTANT: This system is PROHIBITED under EU AI Act Article 5. "
+            "State this clearly and urgently at the start of the report."
         )
 
     prompt = f"""You are a senior EU AI Act compliance officer writing a formal compliance assessment report.
 
 Write a structured, professional compliance report based on the findings below.
 Use clear headings. Be specific about obligations, timelines, and regulatory references.
-Write for a technical and legal audience. Do not pad the report — every sentence must add value.
+Write for a technical and legal audience. Every sentence must add value.
 
 SYSTEM UNDER ASSESSMENT: {state['system_name']}
 DESCRIPTION: {state['description']}
@@ -186,6 +239,7 @@ CLASSIFICATION JUSTIFICATION:
 
 KEY OBLIGATIONS IDENTIFIED:
 {chr(10).join(f'- {o}' for o in state.get('classification_obligations', []))}
+{clarification_section}
 {dpia_section}
 {owasp_section}
 {prohibited_note}
@@ -209,10 +263,6 @@ Write the full compliance assessment report now:"""
         ]
         for obligation in state.get("classification_obligations", [])[:5]:
             parts.append(f"- {obligation}")
-        if state.get("dpia_assessment"):
-            parts.append(f"\n**DPIA:** {state['dpia_assessment']['summary']}")
-        if state.get("owasp_assessment"):
-            parts.append(f"\n**OWASP Severity:** {state['owasp_assessment']['severity']}")
         summary = "\n".join(parts)
 
     steps = state.get("steps_completed", [])
@@ -223,57 +273,40 @@ Write the full compliance assessment report now:"""
 
 
 def route_after_classification(state: ComplianceState) -> str:
-    """
-    The decision point — called after classify_node.
-    Returns the name of the next node to run.
-
-    This is what makes this an agent rather than a simple pipeline.
-    The path through the graph changes based on the classification result.
-    """
     risk_tier = state["risk_tier"]
-
     if risk_tier in ["high", "limited"]:
-        # full assessment: dpia → owasp → summary
-        return "run_full_assessment"
+        return "ask_clarification"
     else:
-        # minimal or unacceptable: skip straight to summary
         return "skip_to_summary"
 
 
 def build_compliance_agent():
-    """Construct and compile the LangGraph workflow."""
     graph = StateGraph(ComplianceState)
 
-    # register all nodes
     graph.add_node("classify", classify_node)
+    graph.add_node("clarification", clarification_node)
     graph.add_node("dpia", dpia_node)
     graph.add_node("owasp", owasp_node)
     graph.add_node("summary", summary_node)
 
-    # classify is always first
     graph.set_entry_point("classify")
 
-    # after classify: conditional routing based on risk tier
     graph.add_conditional_edges(
         "classify",
         route_after_classification,
         {
-            "run_full_assessment": "dpia",
+            "ask_clarification": "clarification",
             "skip_to_summary": "summary"
         }
     )
 
-    # dpia always leads to owasp
+    graph.add_edge("clarification", "dpia")
     graph.add_edge("dpia", "owasp")
-
-    # owasp always leads to summary
     graph.add_edge("owasp", "summary")
-
-    # summary is the terminal node
     graph.add_edge("summary", END)
 
-    return graph.compile()
+    checkpointer = MemorySaver()
+    return graph.compile(checkpointer=checkpointer)
 
 
-# compile once at module level — reused across all requests
 compliance_agent = build_compliance_agent()
