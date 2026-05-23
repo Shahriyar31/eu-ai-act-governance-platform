@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from src.database.connection import get_db
-from src.database.models import User, RefreshToken
+from src.database.models import User, RefreshToken, Organisation
 
 load_dotenv()
 
@@ -134,11 +134,31 @@ def register(request: Request, body: RegisterRequest, db: Session = Depends(get_
     if len(body.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
 
+    # create a personal organisation for this user
+    # slug is URL-safe version of username e.g. "farhan" -> "farhan-org"
+    import re
+    slug = re.sub(r"[^a-z0-9]", "-", body.username.lower()) + "-org"
+    # ensure slug is unique
+    existing_slug = db.query(Organisation).filter(Organisation.slug == slug).first()
+    if existing_slug:
+        slug = slug + "-" + str(db.query(Organisation).count())
+
+    org = Organisation(
+        name=f"{body.username}\'s Organisation",
+        slug=slug,
+        plan="free",
+        is_active=True
+    )
+    db.add(org)
+    db.flush()  # flush to get org.id without committing yet
+
     user = User(
         username=body.username,
         email=body.email,
         hashed_password=pwd_context.hash(body.password),
-        is_active=True
+        is_active=True,
+        org_id=org.id,
+        role="admin"  # first user of an org is always admin
     )
     db.add(user)
     db.commit()
