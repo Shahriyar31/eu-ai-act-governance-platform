@@ -99,7 +99,8 @@ async def classify_endpoint(
             risk_tier=result.risk_tier.value,
             dpia_required=result.dpia_required,
             justification=result.justification,
-            user_id=current_user.id
+            user_id=current_user.id,
+            org_id=current_user.org_id
         )
         db.add(history)
         db.commit()
@@ -207,7 +208,7 @@ def get_history(
     current_user: User = Depends(verify_token)
 ):
     records = db.query(AssessmentHistory).filter(
-        AssessmentHistory.user_id == current_user.id
+        AssessmentHistory.org_id == current_user.org_id
     ).order_by(
         AssessmentHistory.assessed_at.desc()
     ).limit(50).all()
