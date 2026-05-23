@@ -20,10 +20,19 @@ class ModelLogger(BaseCallbackHandler):
         print(f"{self.prefix} Using {provider} — model: {model}")
 
 
+def _groq_base_url() -> str:
+    account_id = os.getenv("CF_ACCOUNT_ID")
+    gateway_name = os.getenv("CF_GATEWAY_NAME")
+    if account_id and gateway_name:
+        return f"https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_name}/groq"
+    return "https://api.groq.com/openai/v1"
+
+
 def get_rag_llm():
     primary = ChatGroq(
         model="llama-3.3-70b-versatile",
         api_key=os.getenv("GROQ_API_KEY"),
+        base_url=_groq_base_url(),
         temperature=0.2,
     )
     fallback_gemini = ChatGoogleGenerativeAI(
@@ -34,6 +43,7 @@ def get_rag_llm():
     fallback_small = ChatGroq(
         model="llama-3.1-8b-instant",
         api_key=os.getenv("GROQ_API_KEY"),
+        base_url=_groq_base_url(),
         temperature=0.2,
     )
     return primary.with_fallbacks([fallback_gemini, fallback_small])
@@ -43,6 +53,7 @@ def get_agent_llm():
     primary = ChatGroq(
         model="llama-3.3-70b-versatile",
         api_key=os.getenv("GROQ_API_KEY"),
+        base_url=_groq_base_url(),
         temperature=0.1,
     )
     fallback_gemini = ChatGoogleGenerativeAI(
@@ -53,6 +64,7 @@ def get_agent_llm():
     fallback_small = ChatGroq(
         model="llama-3.1-8b-instant",
         api_key=os.getenv("GROQ_API_KEY"),
+        base_url=_groq_base_url(),
         temperature=0.1,
     )
     return primary.with_fallbacks([fallback_gemini, fallback_small])
