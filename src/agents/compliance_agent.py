@@ -10,6 +10,8 @@ Graph structure:
                                ↘ summary → END (minimal/unacceptable)
 """
 
+from langchain_core.messages import HumanMessage
+from src.ai.llm_factory import get_agent_llm, ModelLogger
 from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
 from src.database.connection import SessionLocal
@@ -135,60 +137,87 @@ def owasp_node(state: ComplianceState) -> dict:
 
 def summary_node(state: ComplianceState) -> dict:
     """
-    Final node: compile all results into a structured summary.
-    Runs regardless of which path was taken through the graph.
+    Final node: use Gemini 2.5 Pro to synthesise all findings into
+    a professional compliance report. Falls back to Groq if needed.
     """
     risk_tier = state["risk_tier"]
 
-    parts = [
-        f"## Compliance Assessment: {state['system_name']}",
-        "",
-        "### Risk Classification",
-        f"**Risk Tier:** {risk_tier.upper()}",
-        f"**Justification:** {state['classification_justification']}",
-        "",
-        "### Key Obligations",
-    ]
-
-    for obligation in state.get("classification_obligations", [])[:5]:
-        parts.append(f"- {obligation}")
-
+    dpia_section = ""
     if state.get("dpia_assessment"):
         dpia = state["dpia_assessment"]
-        parts.extend([
-            "",
-            "### GDPR Data Protection Impact Assessment",
-            dpia["summary"],
-            f"**Recommendation:** {dpia['recommendation']}"
-        ])
+        dpia_section = f"""
+GDPR DPIA FINDINGS:
+Summary: {dpia['summary']}
+Risks identified: {', '.join(dpia['risks'])}
+Mitigations: {', '.join(dpia['mitigations'])}
+Recommendation: {dpia['recommendation']}
+"""
 
+    owasp_section = ""
     if state.get("owasp_assessment"):
         owasp = state["owasp_assessment"]
-        parts.extend([
-            "",
-            "### OWASP LLM Security Assessment",
-            f"**Severity:** {owasp['severity']}",
-            f"**Key Risks Identified:** {', '.join(owasp['risks_found'][:3])}"
-        ])
+        owasp_section = f"""
+OWASP LLM SECURITY FINDINGS:
+Severity: {owasp['severity']}
+Risks found: {', '.join(owasp['risks_found'])}
+Recommendations: {', '.join(owasp['recommendations'][:3])}
+"""
 
+    prohibited_note = ""
     if risk_tier == "unacceptable":
-        parts.extend([
-            "",
-            "### ⚠️ Prohibited System",
-            "This AI system is prohibited under EU AI Act Article 5.",
-            "Development and deployment must cease immediately.",
-            "Legal review is strongly recommended."
-        ])
+        prohibited_note = (
+            "IMPORTANT: This system is classified as PROHIBITED under EU AI Act Article 5. "
+            "Address this in your report with appropriate urgency."
+        )
+
+    prompt = f"""You are a senior EU AI Act compliance officer writing a formal compliance assessment report.
+
+Write a structured, professional compliance report based on the findings below.
+Use clear headings. Be specific about obligations, timelines, and regulatory references.
+Write for a technical and legal audience. Do not pad the report — every sentence must add value.
+
+SYSTEM UNDER ASSESSMENT: {state['system_name']}
+DESCRIPTION: {state['description']}
+SECTOR: {state['sector']}
+EU AI ACT RISK TIER: {risk_tier.upper()}
+
+CLASSIFICATION JUSTIFICATION:
+{state['classification_justification']}
+
+KEY OBLIGATIONS IDENTIFIED:
+{chr(10).join(f'- {o}' for o in state.get('classification_obligations', []))}
+{dpia_section}
+{owasp_section}
+{prohibited_note}
+
+Write the full compliance assessment report now:"""
+
+    try:
+        llm = get_agent_llm()
+        response = llm.invoke(
+            [HumanMessage(content=prompt)],
+            config={"callbacks": [ModelLogger("[Agent]")]}
+        )
+        summary = response.content
+
+    except Exception as e:
+        print(f"[Agent] LLM summary failed, using structured fallback: {e}")
+        parts = [
+            f"## Compliance Assessment: {state['system_name']}",
+            f"**Risk Tier:** {risk_tier.upper()}",
+            f"**Justification:** {state['classification_justification']}",
+        ]
+        for obligation in state.get("classification_obligations", [])[:5]:
+            parts.append(f"- {obligation}")
+        if state.get("dpia_assessment"):
+            parts.append(f"\n**DPIA:** {state['dpia_assessment']['summary']}")
+        if state.get("owasp_assessment"):
+            parts.append(f"\n**OWASP Severity:** {state['owasp_assessment']['severity']}")
+        summary = "\n".join(parts)
 
     steps = state.get("steps_completed", [])
-    parts.extend([
-        "",
-        f"### Workflow Summary",
-        f"Steps completed automatically: {' → '.join(steps)}"
-    ])
-
     return {
-        "final_summary": "\n".join(parts),
+        "final_summary": summary,
         "steps_completed": steps + ["summary"]
     }
 

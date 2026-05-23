@@ -1,12 +1,10 @@
 import os
 import json
-from groq import Groq
+from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
+from src.ai.llm_factory import get_rag_llm, ModelLogger
 
 load_dotenv()
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-groq_client = Groq(api_key=GROQ_API_KEY)
 
 embedding_model = None
 _knowledge_base_ready = False
@@ -40,12 +38,6 @@ def _load_chunks() -> list[dict]:
 
 
 def initialise_knowledge_base():
-    """
-    Check if embeddings exist in PostgreSQL.
-    If yes: nothing to do — retrieval queries the DB directly.
-    If no: embed all chunks and store them in the DB.
-    This only runs the expensive embedding process once ever.
-    """
     global _knowledge_base_ready
     if _knowledge_base_ready:
         return
@@ -112,37 +104,20 @@ def _retrieve_relevant_chunks(question: str, top_k: int = 5) -> list[dict]:
         db.close()
 
 
-def _call_groq(prompt: str) -> str:
-    """
-    Try 70b first for best quality.
-    Automatically fall back to 8b if 70b hits its daily rate limit.
-    Both models have completely separate token pools on Groq free tier.
-    So exhausting 70b does not affect 8b at all.
-    """
-    models = [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant"
-    ]
+def _call_llm(prompt: str) -> str:
+    llm = get_rag_llm()
+    try:
+        response = llm.invoke(
+            [HumanMessage(content=prompt)],
+            config={"callbacks": [ModelLogger("[RAG]")]}
+        )
+        return response.content
 
-    for model in models:
-        try:
-            response = groq_client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-                max_tokens=2000
-            )
-            print(f"[RAG] Answered using {model}")
-            return response.choices[0].message.content
-
-        except Exception as e:
-            if "429" in str(e) or "rate_limit" in str(e).lower():
-                print(f"[RAG] {model} rate limited — trying next model...")
-                continue
-            raise
-
-    # both models exhausted
-    raise Exception("429_all_models")
+    except Exception as e:
+        error_str = str(e)
+        if "429" in error_str or "rate_limit" in error_str.lower() or "quota" in error_str.lower():
+            raise Exception("429_all_models")
+        raise
 
 
 def answer_compliance_question(question: str) -> dict:
@@ -176,11 +151,11 @@ USER QUESTION:
 DETAILED COMPLIANCE ANSWER:"""
 
     try:
-        answer = _call_groq(prompt)
+        answer = _call_llm(prompt)
 
     except Exception as e:
         error_str = str(e)
-        if "429" in error_str or "rate_limit" in error_str.lower():
+        if "429" in error_str or "rate_limit" in error_str.lower() or "quota" in error_str.lower():
             answer = (
                 "The AI compliance assistant is temporarily unavailable due to high demand. "
                 "This is a rate limit on the underlying language model API and typically "
