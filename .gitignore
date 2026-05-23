@@ -241,3 +241,5 @@ node_modules/
 german_report.pdf
 y
 package-lock.json
+data/regulations/
+data/knowledge_base.json
