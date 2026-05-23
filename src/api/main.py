@@ -58,7 +58,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(governance_router)
 app.include_router(admin_router)
-app.include_router(ai_router)
+app.include_router(ai_router, prefix="/api/v1")
 app.include_router(auth_router)
 
 @app.get("/health")
