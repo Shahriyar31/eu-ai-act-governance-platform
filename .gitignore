@@ -243,3 +243,5 @@ y
 package-lock.json
 data/regulations/
 data/knowledge_base.json
+data/evaluations/
+eval-env/

@@ -162,14 +162,33 @@ USER QUESTION:
 
 DETAILED COMPLIANCE ANSWER:"""
 
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-        max_tokens=2000
-    )
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            max_tokens=2000
+        )
+        answer = response.choices[0].message.content
 
-    answer = response.choices[0].message.content
+    except Exception as e:
+        error_str = str(e)
+
+        if "429" in error_str or "rate_limit" in error_str.lower():
+            # Groq rate limit hit — return a professional message instead of crashing
+            answer = (
+                "The AI compliance assistant is temporarily unavailable due to high demand. "
+                "This is a rate limit on the underlying language model API and typically "
+                "resolves within a few minutes.\n\n"
+                "**In the meantime, you can:**\n"
+                "- Browse the official EU AI Act text at eur-lex.europa.eu\n"
+                "- Use the Risk Classifier to assess your AI system\n"
+                "- Generate a DPIA or OWASP assessment from the dashboard\n\n"
+                "Please try your question again shortly."
+            )
+        else:
+            # unexpected error — re-raise so it surfaces properly
+            raise
 
     return {
         "question": question,
