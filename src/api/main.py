@@ -50,6 +50,12 @@ app = FastAPI(
 # Hooks into every request and exposes /metrics endpoint
 Instrumentator().instrument(app).expose(app)
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from src.routers.auth import limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.include_router(governance_router)
 app.include_router(admin_router)
 app.include_router(ai_router)
