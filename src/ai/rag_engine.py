@@ -1,9 +1,7 @@
 import os
 import json
-import math
 from groq import Groq
 from dotenv import load_dotenv
-from sqlalchemy import text
 
 load_dotenv()
 
@@ -30,7 +28,6 @@ def _get_embedding(text_input: str) -> list[float]:
 
 
 def _load_chunks() -> list[dict]:
-    """Load chunks from JSON file or fall back to manual knowledge base."""
     json_path = "data/knowledge_base.json"
     if os.path.exists(json_path):
         with open(json_path, "r", encoding="utf-8") as f:
@@ -61,12 +58,10 @@ def initialise_knowledge_base():
         count = db.query(ChunkEmbedding).count()
 
         if count > 0:
-            # vectors already in DB — nothing to compute
             print(f"Knowledge base ready — {count} chunks already in PostgreSQL")
             _knowledge_base_ready = True
             return
 
-        # first time — embed everything and store in DB
         chunks = _load_chunks()
         print(f"Embedding {len(chunks)} chunks and storing in PostgreSQL...")
 
@@ -74,7 +69,6 @@ def initialise_knowledge_base():
 
         for i, chunk in enumerate(chunks):
             embedding = _get_embedding(chunk["content"])
-
             db_chunk = ChunkEmbedding(
                 id=chunk["id"],
                 title=chunk["title"],
@@ -84,7 +78,6 @@ def initialise_knowledge_base():
             )
             db.add(db_chunk)
 
-            # commit in batches of 50 to avoid memory issues
             if i % 50 == 0:
                 db.commit()
                 print(f"  Stored {i}/{len(chunks)} chunks...")
@@ -98,12 +91,6 @@ def initialise_knowledge_base():
 
 
 def _retrieve_relevant_chunks(question: str, top_k: int = 5) -> list[dict]:
-    """
-    Use pgvector cosine similarity to find the most relevant chunks.
-    The <=> operator computes cosine distance — lower = more similar.
-    We ORDER BY distance ASC and take the top_k results.
-    This query runs entirely in PostgreSQL — no Python loop needed.
-    """
     from src.database.connection import SessionLocal
     from src.database.models import ChunkEmbedding
 
@@ -111,25 +98,51 @@ def _retrieve_relevant_chunks(question: str, top_k: int = 5) -> list[dict]:
 
     db = SessionLocal()
     try:
-        # pgvector cosine distance operator: <=>
-        # 1 - distance = similarity score
         results = (
             db.query(ChunkEmbedding)
             .order_by(ChunkEmbedding.embedding.op("<=>")(question_embedding))
             .limit(top_k)
             .all()
         )
-
         return [
-            {
-                "id": r.id,
-                "title": r.title,
-                "content": r.content
-            }
+            {"id": r.id, "title": r.title, "content": r.content}
             for r in results
         ]
     finally:
         db.close()
+
+
+def _call_groq(prompt: str) -> str:
+    """
+    Try 70b first for best quality.
+    Automatically fall back to 8b if 70b hits its daily rate limit.
+    Both models have completely separate token pools on Groq free tier.
+    So exhausting 70b does not affect 8b at all.
+    """
+    models = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant"
+    ]
+
+    for model in models:
+        try:
+            response = groq_client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+                max_tokens=2000
+            )
+            print(f"[RAG] Answered using {model}")
+            return response.choices[0].message.content
+
+        except Exception as e:
+            if "429" in str(e) or "rate_limit" in str(e).lower():
+                print(f"[RAG] {model} rate limited — trying next model...")
+                continue
+            raise
+
+    # both models exhausted
+    raise Exception("429_all_models")
 
 
 def answer_compliance_question(question: str) -> dict:
@@ -163,19 +176,11 @@ USER QUESTION:
 DETAILED COMPLIANCE ANSWER:"""
 
     try:
-        response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-            max_tokens=2000
-        )
-        answer = response.choices[0].message.content
+        answer = _call_groq(prompt)
 
     except Exception as e:
         error_str = str(e)
-
         if "429" in error_str or "rate_limit" in error_str.lower():
-            # Groq rate limit hit — return a professional message instead of crashing
             answer = (
                 "The AI compliance assistant is temporarily unavailable due to high demand. "
                 "This is a rate limit on the underlying language model API and typically "
@@ -187,7 +192,6 @@ DETAILED COMPLIANCE ANSWER:"""
                 "Please try your question again shortly."
             )
         else:
-            # unexpected error — re-raise so it surfaces properly
             raise
 
     return {
