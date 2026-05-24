@@ -91,3 +91,29 @@ class RefreshToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     is_revoked = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class MonitoringSource(Base):
+    __tablename__ = "monitoring_sources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String(500), nullable=False, unique=True)
+    title = Column(String(200), nullable=False)
+    content_hash = Column(String(64), nullable=True)
+    last_checked = Column(DateTime(timezone=True), nullable=True)
+    last_changed = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class RegulatoryUpdate(Base):
+    __tablename__ = "regulatory_updates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_id = Column(Integer, nullable=False)
+    source_url = Column(String(500), nullable=False)
+    source_title = Column(String(200), nullable=False)
+    change_summary = Column(Text, nullable=True)
+    chunks_added = Column(Integer, default=0)
+    admins_notified = Column(Boolean, default=False)
+    detected_at = Column(DateTime(timezone=True), server_default=func.now())
