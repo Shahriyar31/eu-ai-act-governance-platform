@@ -173,7 +173,7 @@ jobs:
       - name: Deploy to Container Apps
         run: |
           az containerapp update \
-            --name eu-ai-governance \
+            --name ca-eu-ai-governance \
             --resource-group rg-eu-ai-governance \
             --image ${{ env.ACR_LOGIN_SERVER }}/eu-ai-governance:${{ github.sha }}
       - name: Print live URL
