@@ -1,0 +1,9 @@
+{
+  "answer_relevancy": 0.7534775621589704,
+  "context_precision": 0.6999999999766667,
+  "context_recall": 0.7272727272727273,
+  "evaluator_model": "llama-3.1-8b-instant",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "num_questions": 10,
+  "knowledge_base_chunks": 423
+}
