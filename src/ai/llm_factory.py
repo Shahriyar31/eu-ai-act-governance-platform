@@ -35,18 +35,21 @@ def get_rag_llm():
         base_url=_groq_base_url(),
         temperature=0.2,
     )
-    fallback_gemini = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        temperature=0.2,
-    )
-    fallback_small = ChatGroq(
+    fallbacks = []
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        fallbacks.append(ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            google_api_key=gemini_key,
+            temperature=0.2,
+        ))
+    fallbacks.append(ChatGroq(
         model="llama-3.1-8b-instant",
         api_key=os.getenv("GROQ_API_KEY"),
         base_url=_groq_base_url(),
         temperature=0.2,
-    )
-    return primary.with_fallbacks([fallback_gemini, fallback_small])
+    ))
+    return primary.with_fallbacks(fallbacks)
 
 
 def get_agent_llm():
@@ -56,15 +59,18 @@ def get_agent_llm():
         base_url=_groq_base_url(),
         temperature=0.1,
     )
-    fallback_gemini = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        temperature=0.1,
-    )
-    fallback_small = ChatGroq(
+    fallbacks = []
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        fallbacks.append(ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            google_api_key=gemini_key,
+            temperature=0.1,
+        ))
+    fallbacks.append(ChatGroq(
         model="llama-3.1-8b-instant",
         api_key=os.getenv("GROQ_API_KEY"),
         base_url=_groq_base_url(),
         temperature=0.1,
-    )
-    return primary.with_fallbacks([fallback_gemini, fallback_small])
+    ))
+    return primary.with_fallbacks(fallbacks)
