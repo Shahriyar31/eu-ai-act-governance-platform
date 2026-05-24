@@ -97,7 +97,7 @@ jobs:
       DB_PASSWORD: test
       DB_NAME: test
       DB_PORT: 5432
-    steps:
+      steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Set up Python
@@ -106,5 +106,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Run database migrations
+        run: alembic upgrade head
       - name: Run tests
         run: python -m pytest tests/ -v --tb=short
