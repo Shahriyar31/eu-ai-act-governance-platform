@@ -1,4 +1,5 @@
 from src.routers.auth import verify_token
+from datetime import datetime
 from src.database.models import User
 from fastapi.responses import FileResponse
 from fastapi import APIRouter, HTTPException, Depends
@@ -22,6 +23,8 @@ from src.governance.classifier import classify_ai_system
 from src.governance.dpia import generate_dpia
 from src.governance.owasp import check_owasp_llm
 from src.governance.nist import map_to_nist
+from src.reports.audit_pdf import generate_audit_pdf
+from src.database.models import AuditLedger
 from src.governance.pdf_generator import generate_pdf_report
 from src.governance.nvd_checker import check_technologies_nvd
 from src.governance.atlas_checker import assess_atlas_risks
@@ -34,6 +37,31 @@ from src.metrics import (
     pdf_reports_total
 )
 import uuid
+import os
+import hashlib
+import hmac
+import json
+
+
+def _write_audit_record(db, action: str, system_name: str, payload: dict):
+    last = db.query(AuditLedger).order_by(AuditLedger.id.desc()).first()
+    previous_hash = last.record_hash if last else "0" * 64
+    payload_json = json.dumps(payload, default=str, sort_keys=True)
+    content = previous_hash + payload_json
+    record_hash = hashlib.sha256(content.encode()).hexdigest()
+    secret = os.getenv("JWT_SECRET", "fallback-secret")
+    signature = hmac.new(secret.encode(), record_hash.encode(), hashlib.sha256).hexdigest()
+    record = AuditLedger(
+        action=action,
+        system_name=system_name,
+        payload=payload_json,
+        previous_hash=previous_hash,
+        record_hash=record_hash,
+        signature=signature
+    )
+    db.add(record)
+    db.commit()
+
 
 router = APIRouter(prefix="/api/v1", tags=["Governance"])
 
@@ -105,7 +133,14 @@ async def classify_endpoint(
         db.add(history)
         db.commit()
 
-        # Count after successful DB write — only count what actually persisted
+        _write_audit_record(db, "classification", result.system_name, {
+            "risk_tier": result.risk_tier.value,
+            "sector": request.sector.value,
+            "dpia_required": result.dpia_required,
+            "user_id": current_user.id,
+            "org_id": current_user.org_id
+        })
+
         assessments_total.inc()
         risk_tier_total.labels(tier=result.risk_tier.value).inc()
 
@@ -118,7 +153,6 @@ async def classify_endpoint(
 async def dpia_endpoint(request: DPIARequest):
     try:
         result = generate_dpia(request)
-        # Count every standalone DPIA generation
         dpia_generated_total.inc()
         return result
     except Exception as e:
@@ -129,7 +163,6 @@ async def dpia_endpoint(request: DPIARequest):
 async def owasp_endpoint(request: OWASPRequest):
     try:
         result = check_owasp_llm(request)
-        # Count every standalone OWASP check
         owasp_checks_total.inc()
         return result
     except Exception as e:
@@ -180,7 +213,6 @@ async def assess_and_download(request: FullAssessmentRequest, db: Session = Depe
             nist
         )
 
-        # Full assessment touches all three services — count each one
         assessments_total.inc()
         risk_tier_total.labels(tier=classification.risk_tier.value).inc()
         dpia_generated_total.inc()
@@ -224,3 +256,37 @@ def get_history(
         }
         for r in records
     ]
+
+
+@router.get("/audit/export")
+def export_audit_trail(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token)
+):
+    records = db.query(AuditLedger).order_by(AuditLedger.id.asc()).all()
+
+    if not records:
+        raise HTTPException(
+            status_code=404,
+            detail="No audit records found. Run some compliance assessments first."
+        )
+
+    org_name = "EU AI Act Governance Platform"
+    if hasattr(current_user, 'org_id') and current_user.org_id:
+        from src.database.models import Organisation
+        org = db.query(Organisation).filter(Organisation.id == current_user.org_id).first()
+        if org:
+            org_name = org.name
+
+    filepath = generate_audit_pdf(
+        records=records,
+        org_name=org_name,
+        output_dir="src/reports"
+    )
+
+    return FileResponse(
+        path=filepath,
+        media_type="application/pdf",
+        filename=f"audit_trail_{datetime.now().strftime('%Y%m%d')}.pdf",
+        headers={"Content-Disposition": "attachment; filename=audit_trail.pdf"}
+    )
