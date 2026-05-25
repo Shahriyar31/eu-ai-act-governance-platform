@@ -1,3 +1,14 @@
+import os
+import sentry_sdk
+
+_sentry_dsn = os.getenv("SENTRY_DSN")
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        traces_sample_rate=0.1,
+        send_default_pii=False
+    )
+
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from fastapi import FastAPI
@@ -7,8 +18,6 @@ from pathlib import Path
 from prometheus_fastapi_instrumentator import Instrumentator
 from src.routers.monitoring import router as monitoring_router
 from src.monitoring.regulatory_monitor import seed_monitoring_sources
-
-# Import counters from dedicated metrics module — not defined here anymore
 from src.routers.agent import router as agent_router
 from src.metrics import assessments_total, risk_tier_total
 from src.routers.governance import router as governance_router
@@ -16,17 +25,15 @@ from src.routers.admin import router as admin_router
 from src.routers.ai import router as ai_router
 from src.routers.auth import router as auth_router
 from src.database.init_db import init_db
-
 import logging
 import sys
 from pythonjsonlogger import jsonlogger
 
+
 def setup_logging():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    
     handler = logging.StreamHandler(sys.stdout)
-    
     formatter = jsonlogger.JsonFormatter(
         fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%SZ"
@@ -35,14 +42,20 @@ def setup_logging():
     logger.handlers = [handler]
     return logging.getLogger(__name__)
 
+
 logger = setup_logging()
+
 
 @asynccontextmanager
 async def lifespan(app):
     init_db()
-    seed_monitoring_sources()
+    try:
+        seed_monitoring_sources()
+    except Exception as e:
+        logger.warning(f"Monitoring source seeding skipped: {e}")
     logger.info("Application started", extra={"service": "eu-ai-governance"})
     yield
+
 
 app = FastAPI(
     title="EU AI Act Governance Platform",
@@ -51,7 +64,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Hooks into every request and exposes /metrics endpoint
 Instrumentator().instrument(app).expose(app)
 
 from slowapi import _rate_limit_exceeded_handler
@@ -67,6 +79,7 @@ app.include_router(auth_router)
 app.include_router(agent_router)
 app.include_router(monitoring_router)
 
+
 @app.get("/health")
 def health_check():
     logger.info("Health check requested")
@@ -75,6 +88,7 @@ def health_check():
         "service": "EU AI Act Governance Platform",
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+
 
 FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():

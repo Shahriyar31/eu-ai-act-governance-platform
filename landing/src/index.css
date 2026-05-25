@@ -1,0 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════
+   LIGHT MODE (default)
+═══════════════════════════════════════ */
+:root {
+  --bg-base: #f0f4fb;
+  --bg-card: #e8eef8;
+  --bg-card-deep: #dde5f5;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-card: rgba(255,255,255,0.85);
+  --shadow-card: 6px 6px 16px rgba(163,177,198,0.55), -4px -4px 12px rgba(255,255,255,0.85);
+  --shadow-card-deep: 8px 8px 20px rgba(163,177,198,0.6), -6px -6px 16px rgba(255,255,255,0.9);
+  --header-bg: rgba(240,244,251,0.88);
+  --nm-btn-bg: #e8eef8;
+  --nm-btn-shadow: 4px 4px 10px rgba(163,177,198,0.45), -2px -2px 8px rgba(255,255,255,0.8);
+  --nm-btn-shadow-hover: 6px 6px 14px rgba(163,177,198,0.5), -3px -3px 10px rgba(255,255,255,0.9);
+  --nm-btn-shadow-active: inset 2px 2px 6px rgba(163,177,198,0.5), inset -1px -1px 4px rgba(255,255,255,0.8);
+  --divider: rgba(0,0,0,0.06);
+  --pill-bg-dark: rgba(0,0,0,0.04);
+}
+
+/* ═══════════════════════════════════════
+   DARK MODE
+═══════════════════════════════════════ */
+.dark {
+  --bg-base: #0d1117;
+  --bg-card: #161b27;
+  --bg-card-deep: #1a2033;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-card: rgba(255,255,255,0.06);
+  --shadow-card: 6px 6px 18px rgba(0,0,0,0.55), -3px -3px 10px rgba(255,255,255,0.03);
+  --shadow-card-deep: 8px 8px 24px rgba(0,0,0,0.65), -4px -4px 14px rgba(255,255,255,0.04);
+  --header-bg: rgba(13,17,23,0.9);
+  --nm-btn-bg: #161b27;
+  --nm-btn-shadow: 4px 4px 10px rgba(0,0,0,0.5), -2px -2px 8px rgba(255,255,255,0.03);
+  --nm-btn-shadow-hover: 6px 6px 14px rgba(0,0,0,0.6), -3px -3px 10px rgba(255,255,255,0.04);
+  --nm-btn-shadow-active: inset 2px 2px 6px rgba(0,0,0,0.6), inset -1px -1px 4px rgba(255,255,255,0.03);
+  --divider: rgba(255,255,255,0.06);
+  --pill-bg-dark: rgba(255,255,255,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  cursor: none;
+  overflow-x: hidden;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+@media (max-width: 768px) {
+  body { cursor: auto; }
+}
+
+/* ═══════════════════════════════════════
+   NEUMORPHIC CARDS
+═══════════════════════════════════════ */
+.nm-card {
+  background: var(--bg-card);
+  border-radius: 24px;
+  border: 1.5px solid var(--border-card);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.4s, box-shadow 0.4s, border-color 0.4s;
+}
+.nm-card-deep {
+  background: var(--bg-card-deep);
+  border-radius: 28px;
+  border: 1.5px solid var(--border-card);
+  box-shadow: var(--shadow-card-deep);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.4s, box-shadow 0.4s, border-color 0.4s;
+}
+
+/* ═══════════════════════════════════════
+   BUTTON
+═══════════════════════════════════════ */
+.nm-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--nm-btn-bg);
+  border: 1.5px solid var(--border-card);
+  box-shadow: var(--nm-btn-shadow);
+  color: var(--text-primary);
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease, background 0.4s;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.nm-button:hover {
+  box-shadow: var(--nm-btn-shadow-hover);
+  transform: translateY(-1px);
+}
+.nm-button:active {
+  box-shadow: var(--nm-btn-shadow-active);
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════
+   MARQUEE
+═══════════════════════════════════════ */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+.toast-enter { animation: toast-in 0.35s cubic-bezier(0.16,1,0.3,1) forwards; }
+.toast-exit  { animation: toast-out 0.3s ease forwards; }
+
+@keyframes toast-in {
+  from { opacity:0; transform: translateX(120%) scale(0.92); }
+  to   { opacity:1; transform: translateX(0) scale(1); }
+}
+@keyframes toast-out {
+  from { opacity:1; transform: translateX(0) scale(1); }
+  to   { opacity:0; transform: translateX(120%) scale(0.92); }
+}
+
+/* ═══════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: rgba(29,110,245,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(29,110,245,0.5); }
+
+::selection { background: rgba(29,110,245,0.2); color: var(--text-primary); }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE HELPERS
+═══════════════════════════════════════ */
+.section-pad { padding: 0 56px; }
+@media (max-width: 900px)  { .section-pad { padding: 0 28px; } }
+@media (max-width: 600px)  { .section-pad { padding: 0 16px; } }
