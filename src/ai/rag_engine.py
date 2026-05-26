@@ -82,7 +82,7 @@ def initialise_knowledge_base():
         db.close()
 
 
-def _retrieve_relevant_chunks(question: str, top_k: int = 5) -> list[dict]:
+def _retrieve_relevant_chunks(question: str, top_k: int = 8) -> list[dict]:
     from src.database.connection import SessionLocal
     from src.database.models import ChunkEmbedding
 
@@ -109,7 +109,7 @@ def _call_llm(prompt: str) -> str:
     try:
         response = llm.invoke(
             [HumanMessage(content=prompt)],
-            config={"callbacks": [ModelLogger("[RAG]")]}
+            config={"callbacks": [ModelLogger("[RAG]")], "max_tokens": 2048}
         )
         return response.content
 
@@ -131,16 +131,18 @@ def answer_compliance_question(question: str) -> dict:
         for chunk in relevant_chunks
     ])
 
-    prompt = f"""You are a senior EU AI Act compliance expert with deep knowledge of Regulation EU 2024/1689.
+    prompt = f"""You are an elite, highly detailed EU AI Act and GDPR compliance expert.
 
-Your role is to provide thorough, accurate, and actionable compliance guidance to organisations deploying AI systems in the European Union.
+Your role is to provide EXHAUSTIVE, highly comprehensive, and profoundly detailed answers. You are speaking to compliance officers and legal engineers who require extreme precision, long-form explanations, and deep nuance. 
 
-Using the regulatory context provided below, answer the user's question in detail. Structure your answer clearly:
-- Start with a direct answer to the question
-- Cite specific article numbers and annex references where relevant
-- Explain the practical implications for organisations
-- If multiple aspects apply, address each one
-- If the context does not contain enough information, say so and explain what additional articles would be relevant
+Using the regulatory context provided below, construct a massive, highly detailed response:
+- IN-DEPTH EXPLANATION: Do not just give a summary. Break down every single aspect of the answer logically.
+- EXPLICIT CITATIONS: Cite specific article numbers, annex references, and paragraph numbers continuously throughout your text.
+- PRACTICAL IMPLICATIONS: Explain the exact operational, technical, and governance requirements for organisations in reality.
+- CORNER CASES: Detail any exceptions, edge cases, or overlapping regulations (e.g., GDPR interactions) mentioned in the text.
+- FORMATTING: Use bolding, bullet points, and numbered lists to structure your dense information clearly.
+
+Do NOT give a brief answer. If the context has rich information, you must extract and explain all of it.
 
 REGULATORY CONTEXT:
 {context}
@@ -148,7 +150,7 @@ REGULATORY CONTEXT:
 USER QUESTION:
 {question}
 
-DETAILED COMPLIANCE ANSWER:"""
+COMPREHENSIVE COMPLIANCE ANSWER:"""
 
     try:
         answer = _call_llm(prompt)

@@ -2,7 +2,7 @@ import os
 import sentry_sdk
 
 _sentry_dsn = os.getenv("SENTRY_DSN")
-if _sentry_dsn:
+if _sentry_dsn and _sentry_dsn.startswith("https://") and "@" in _sentry_dsn:
     sentry_sdk.init(
         dsn=_sentry_dsn,
         traces_sample_rate=0.1,
@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pathlib import Path
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -62,6 +63,17 @@ app = FastAPI(
     description="Automated compliance platform for EU AI Act, GDPR, and NIST AI RMF",
     version="0.1.0",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 Instrumentator().instrument(app).expose(app)

@@ -1,9 +1,9 @@
 export default function RiskBadge({ tier }) {
   const config = {
-    unacceptable: { label: 'PROHIBITED', color: '#ef4444', bg: '#1a0a0a' },
-    high:         { label: 'HIGH RISK',  color: '#f59e0b', bg: '#1a1200' },
-    limited:      { label: 'LIMITED',    color: '#3b82f6', bg: '#0a0f1a' },
-    minimal:      { label: 'MINIMAL',    color: '#10b981', bg: '#0a1a12' },
+    unacceptable: { label: 'PROHIBITED', color: '#ff5d5d', bg: 'rgba(255, 93, 93, 0.12)' },
+    high:         { label: 'HIGH RISK',  color: '#ffb020', bg: 'rgba(255, 176, 32, 0.12)' },
+    limited:      { label: 'LIMITED',    color: '#4cc3ff', bg: 'rgba(76, 195, 255, 0.12)' },
+    minimal:      { label: 'MINIMAL',    color: '#27d17f', bg: 'rgba(39, 209, 127, 0.12)' },
   }
 
   const c = config[tier] || config.minimal
@@ -14,12 +14,17 @@ export default function RiskBadge({ tier }) {
         backgroundColor: c.bg,
         color: c.color,
         border: `1px solid ${c.color}`,
-        padding: '2px 10px',
-        borderRadius: '3px',
+        padding: '6px 12px',
+        borderRadius: '999px',
         fontFamily: 'IBM Plex Mono, monospace',
-        fontSize: '11px',
-        fontWeight: 600,
-        letterSpacing: '0.08em',
+        fontSize: '10px',
+        fontWeight: 700,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        lineHeight: 1,
       }}
     >
       {c.label}

@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+export const API_URL = import.meta.env.VITE_API_URL || '/'
+
 const api = axios.create({
-  baseURL: '/',
+  baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' }
 })
 
@@ -61,7 +63,7 @@ api.interceptors.response.use(
 
       try {
         // call refresh endpoint with the stored refresh token
-        const response = await axios.post('/auth/refresh', {
+        const response = await axios.post(`${API_URL}/auth/refresh`, {
           refresh_token: refreshToken
         })
 
@@ -122,7 +124,7 @@ export const getHistory = () =>
 
 export const downloadReport = async (data) => {
   const token = localStorage.getItem('auth_token')
-  const response = await fetch('/api/v1/assess-and-download', {
+  const response = await fetch(`${API_URL}/api/v1/assess-and-download`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

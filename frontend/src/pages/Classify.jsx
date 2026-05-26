@@ -31,6 +31,11 @@ export default function Classify() {
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
+  const modeTabs = [
+    { id: 'legacy', label: 'Window 1 Legacy V1 Engine', sub: 'GDPR, risk tiers, and scanners' },
+    { id: 'regulated', label: 'Window 2 Regulated V2 Act', sub: 'EU AI Act 2024 with intended purpose' },
+  ]
+
   const handleSubmit = async () => {
     setLoading(true)
     setError(null)
@@ -66,127 +71,170 @@ export default function Classify() {
     }
   }
 
-  const inputStyle = {
+  const panel = {
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.015), transparent 22%), #101317',
+    border: '1px solid #1f2530',
+    borderRadius: '12px',
+    boxShadow: '0 0 0 1px rgba(255,255,255,0.02) inset',
+  }
+
+  const fieldBase = {
     width: '100%',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border)',
-    borderRadius: '8px',
-    padding: '10px 14px',
+    background: '#141920',
+    border: '1px solid #232936',
+    borderRadius: '4px',
+    padding: '12px 14px',
     color: 'var(--text-primary)',
     fontFamily: 'IBM Plex Sans, sans-serif',
     fontSize: '14px',
     outline: 'none',
-    transition: 'border-color 0.15s ease',
+    transition: 'border-color 0.15s ease, background 0.15s ease',
   }
 
   const labelStyle = {
     display: 'block',
     fontFamily: 'IBM Plex Mono, monospace',
-    fontSize: '11px',
+    fontSize: '10px',
     color: 'var(--text-secondary)',
-    letterSpacing: '0.08em',
-    marginBottom: '6px',
+    letterSpacing: '0.14em',
+    marginBottom: '8px',
+    textTransform: 'uppercase',
   }
 
   return (
-    <div style={{ animation: 'slideUp 0.4s ease forwards' }}>
-      <div style={{ marginBottom: '32px' }}>
+    <div style={{ animation: 'slideUp 0.4s ease forwards', maxWidth: 1440, paddingBottom: '24px' }}>
+      <div style={{ marginBottom: '18px' }}>
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace',
-          fontSize: '11px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '7px 12px',
+          borderRadius: '999px',
+          border: '1px solid var(--border)',
+          background: 'rgba(76,195,255,0.08)',
           color: 'var(--accent)',
-          letterSpacing: '0.12em',
-          marginBottom: '8px',
+          fontFamily: 'IBM Plex Mono, monospace',
+          fontSize: '10px',
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          marginBottom: '10px',
         }}>
-          EU AI ACT — ARTICLE 6 & ANNEX III
+          EU AI ACT · ARTICLE 6 + ANNEX III
         </div>
         <h1 style={{
-          fontSize: '32px',
+          fontSize: 'clamp(30px, 4vw, 46px)',
           fontWeight: 700,
           fontFamily: 'Inter, sans-serif',
           color: 'var(--text-primary)',
-          letterSpacing: '-0.02em',
+          letterSpacing: '-0.04em',
           marginBottom: '8px',
         }}>
           Risk Classification
         </h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-          Classify an AI system into its EU AI Act risk tier and generate compliance obligations.
+        <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '70ch', lineHeight: 1.7 }}>
+          Run an EU AI Act compliance check on a new system.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        <div style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: '12px',
-          padding: '28px',
-        }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        gap: '10px',
+        marginBottom: '20px',
+      }}>
+        {modeTabs.map((tab, index) => (
+          <div
+            key={tab.id}
+            style={{
+              ...panel,
+              padding: '12px 16px',
+              background: index === 0 ? '#1565d8' : '#0f1318',
+              borderColor: index === 0 ? '#1565d8' : '#202633',
+              color: index === 0 ? '#fff' : 'var(--text-primary)',
+            }}
+          >
+            <div style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '11px', fontWeight: 700, textAlign: 'center' }}>
+              {tab.label}
+            </div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: index === 0 ? 0.78 : 0.55, textAlign: 'center', marginTop: '4px' }}>
+              {tab.sub}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.12fr) minmax(300px, 0.78fr)', gap: '16px', alignItems: 'start' }}>
+        <div style={{ ...panel, padding: '24px' }}>
           <div style={{
             fontSize: '14px',
-            fontWeight: 600,
+            fontWeight: 700,
             color: 'var(--text-primary)',
-            marginBottom: '24px',
+            marginBottom: '20px',
             fontFamily: 'Inter, sans-serif',
+            letterSpacing: '-0.02em',
           }}>
             System Details
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>SYSTEM NAME</label>
+            <label style={labelStyle}>System Name</label>
             <input
-              style={inputStyle}
+              style={fieldBase}
               value={form.system_name}
               onChange={e => set('system_name', e.target.value)}
-              placeholder="e.g. Patient Diagnosis Assistant"
+              placeholder="e.g. CV Screener Pro"
               onFocus={e => e.target.style.borderColor = 'var(--accent)'}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>DESCRIPTION</label>
+            <label style={labelStyle}>System Description</label>
             <textarea
-              style={{ ...inputStyle, height: '100px', resize: 'vertical' }}
+              style={{ ...fieldBase, height: '104px', resize: 'vertical' }}
               value={form.description}
               onChange={e => set('description', e.target.value)}
-              placeholder="Describe what the AI system does..."
+              placeholder="Describe what the AI system does, its inputs, and its outputs..."
               onFocus={e => e.target.style.borderColor = 'var(--accent)'}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>SECTOR</label>
+            <label style={labelStyle}>Sector / Application Area</label>
             <select
-              style={{ ...inputStyle, cursor: 'pointer' }}
+              style={{ ...fieldBase, cursor: 'pointer' }}
               value={form.sector}
               onChange={e => set('sector', e.target.value)}
             >
               {SECTORS.map(s => (
-                <option key={s} value={s} style={{ background: 'var(--bg-surface)' }}>
+                <option key={s} value={s} style={{ background: 'var(--bg-base)' }}>
                   {s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </option>
               ))}
             </select>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+          <div style={{ borderTop: '1px solid #232936', paddingTop: '20px', marginBottom: '18px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px' }}>
+              Capabilities
+            </div>
             {[
-              { field: 'automated_decision', label: 'Makes automated decisions without human review' },
-              { field: 'processes_personal_data', label: 'Processes personal data of individuals' },
-              { field: 'interacts_with_humans', label: 'Directly interacts with humans' },
+              { field: 'automated_decision', label: 'Makes Automated Decisions', sub: 'System output directly results in actions without human intervention.' },
+              { field: 'processes_personal_data', label: 'Processes Personal Data', sub: 'System ingests or analyzes PII, biometrics, or sensitive personal data.' },
+              { field: 'interacts_with_humans', label: 'Direct Human Interaction', sub: 'System is a chatbot, virtual assistant, or user-facing application.' },
             ].map(({ field, label }) => (
               <label key={field} style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
                 cursor: 'pointer',
-                padding: '10px 14px',
-                background: form[field] ? 'var(--accent-dim)' : 'var(--bg-elevated)',
-                border: `1px solid ${form[field] ? 'var(--accent)' : 'var(--border)'}`,
-                borderRadius: '8px',
+                padding: '10px 12px',
+                background: '#0f1318',
+                border: '1px solid #232936',
+                borderRadius: '4px',
                 transition: 'all 0.15s ease',
+                marginBottom: '10px',
               }}>
                 <input
                   type="checkbox"
@@ -194,7 +242,14 @@ export default function Classify() {
                   onChange={e => set(field, e.target.checked)}
                   style={{ width: '16px', height: '16px', accentColor: 'var(--accent)', flexShrink: 0 }}
                 />
-                <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{label}</span>
+                <div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.3 }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    {({ automated_decision: 'System output directly results in actions without human intervention.', processes_personal_data: 'System ingests or analyzes PII, biometrics, or sensitive personal data.', interacts_with_humans: 'System is a chatbot, virtual assistant, or user-facing application.' }[field])}
+                  </div>
+                </div>
               </label>
             ))}
           </div>
@@ -204,24 +259,25 @@ export default function Classify() {
             disabled={loading || !form.system_name || !form.description}
             style={{
               width: '100%',
-              padding: '13px',
+              padding: '14px 16px',
               background: loading || !form.system_name || !form.description
-                ? 'var(--bg-elevated)'
-                : 'var(--accent)',
+                ? '#1c2128'
+                : '#1d6ef5',
               color: loading || !form.system_name || !form.description
                 ? 'var(--text-muted)'
-                : 'var(--bg-base)',
+                : '#ffffff',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '4px',
               fontFamily: 'IBM Plex Mono, monospace',
-              fontSize: '12px',
-              fontWeight: 600,
-              letterSpacing: '0.08em',
+              fontSize: '11px',
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
               cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            {loading ? 'CLASSIFYING...' : 'CLASSIFY SYSTEM →'}
+            {loading ? 'Running assessment...' : 'Run Compliance Check  →'}
           </button>
 
           {error && (
@@ -230,7 +286,7 @@ export default function Classify() {
               padding: '12px 14px',
               background: 'rgba(248,81,73,0.08)',
               border: '1px solid var(--danger)',
-              borderRadius: '8px',
+              borderRadius: '14px',
               fontSize: '13px',
               color: 'var(--danger)',
             }}>
@@ -239,164 +295,101 @@ export default function Classify() {
           )}
         </div>
 
-        <div>
+        <div style={{ ...panel, padding: '22px', minHeight: '100%' }}>
           {!result && !loading && (
             <div style={{
-              height: '100%',
-              minHeight: '300px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px dashed var(--border)',
-              borderRadius: '12px',
-              gap: '12px',
+              minHeight: '238px',
+              padding: '18px 6px 6px',
             }}>
-              <div style={{ fontSize: '32px', opacity: 0.3 }}>⬡</div>
-              <div style={{
-                fontFamily: 'IBM Plex Mono, monospace',
-                fontSize: '12px',
-                color: 'var(--text-muted)',
-              }}>
-                Results will appear here
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
+                Assessment Process
               </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '14px' }}>
+                Argus AI evaluates system profiles against the latest EU AI Act articles and Annexes III/IV.
+              </div>
+              <ul style={{ marginLeft: '18px', color: 'var(--text-secondary)', lineHeight: 1.75, fontSize: '13px' }}>
+                <li>Identifies prohibited practices</li>
+                <li>Checks high-risk use cases</li>
+                <li>Maps transparency obligations</li>
+                <li>Generates audit trail</li>
+              </ul>
             </div>
           )}
 
           {result && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              animation: 'slideUp 0.3s ease forwards',
-            }}>
+            <div style={{ display: 'grid', gap: '16px', animation: 'slideUp 0.3s ease forwards' }}>
               <div style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                padding: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: '16px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--border)',
               }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '16px',
-                }}>
-                  <div>
-                    <div style={{
-                      fontFamily: 'IBM Plex Mono, monospace',
-                      fontSize: '10px',
-                      color: 'var(--text-secondary)',
-                      letterSpacing: '0.08em',
-                      marginBottom: '4px',
-                    }}>
-                      CLASSIFICATION RESULT
-                    </div>
-                    <div style={{
-                      fontSize: '20px',
-                      fontWeight: 700,
-                      fontFamily: 'Inter, sans-serif',
-                      color: 'var(--text-primary)',
-                      letterSpacing: '-0.01em',
-                    }}>
-                      {result.system_name}
-                    </div>
+                <div>
+                  <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Classification result
                   </div>
-                  <RiskBadge tier={result.risk_tier} />
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
+                    {result.system_name}
+                  </div>
                 </div>
-                <p style={{
-                  fontSize: '13px',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.7,
-                  marginBottom: '16px',
-                }}>
-                  {result.justification}
-                </p>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  background: result.dpia_required
-                    ? 'rgba(248,81,73,0.08)'
-                    : 'rgba(63,185,80,0.08)',
-                  border: `1px solid ${result.dpia_required ? 'var(--danger)' : 'var(--success)'}`,
-                  borderRadius: '6px',
-                }}>
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: result.dpia_required ? 'var(--danger)' : 'var(--success)',
-                  }} />
-                  <span style={{
-                    fontFamily: 'IBM Plex Mono, monospace',
-                    fontSize: '11px',
-                    color: result.dpia_required ? 'var(--danger)' : 'var(--success)',
-                    fontWeight: 600,
-                  }}>
-                    DPIA {result.dpia_required ? 'REQUIRED' : 'NOT REQUIRED'}
-                  </span>
-                </div>
+                <RiskBadge tier={result.risk_tier} />
               </div>
 
-              <div style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                padding: '24px',
-              }}>
-                <div style={{
-                  fontFamily: 'IBM Plex Mono, monospace',
-                  fontSize: '11px',
-                  color: 'var(--text-secondary)',
-                  letterSpacing: '0.08em',
-                  marginBottom: '16px',
-                }}>
-                  COMPLIANCE OBLIGATIONS ({result.obligations.length})
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.75 }}>
+                {result.justification}
+              </p>
+
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '999px', background: result.dpia_required ? 'rgba(248,81,73,0.1)' : 'rgba(39,209,127,0.1)', border: `1px solid ${result.dpia_required ? 'var(--danger)' : 'var(--success)'}` }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '999px', background: result.dpia_required ? 'var(--danger)' : 'var(--success)' }} />
+                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', color: result.dpia_required ? 'var(--danger)' : 'var(--success)', textTransform: 'uppercase' }}>
+                  DPIA {result.dpia_required ? 'Required' : 'Not required'}
+                </span>
+              </div>
+
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '14px' }}>
+                  Compliance obligations ({result.obligations.length})
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'grid', gap: '10px' }}>
                   {result.obligations.map((ob, i) => (
                     <div key={i} style={{
-                      display: 'flex',
+                      display: 'grid',
+                      gridTemplateColumns: '28px 1fr',
                       gap: '12px',
-                      padding: '8px 0',
-                      borderBottom: i < result.obligations.length - 1
-                        ? '1px solid var(--border)'
-                        : 'none',
-                      fontSize: '13px',
-                      color: 'var(--text-secondary)',
-                      lineHeight: 1.5,
+                      padding: '14px',
+                      borderRadius: '14px',
+                      border: '1px solid var(--border)',
+                      background: 'rgba(255,255,255,0.02)',
                     }}>
-                      <span style={{
-                        fontFamily: 'IBM Plex Mono, monospace',
-                        fontSize: '11px',
-                        color: 'var(--accent)',
-                        flexShrink: 0,
-                        marginTop: '1px',
-                      }}>
+                      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
                         {String(i + 1).padStart(2, '0')}
-                      </span>
-                      {ob}
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                        {ob}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '6px' }}>
                 <select
                   value={language}
                   onChange={e => setLanguage(e.target.value)}
                   style={{
-                    background: 'var(--bg-elevated)',
+                    minWidth: '160px',
+                    background: 'rgba(255,255,255,0.02)',
                     border: '1px solid var(--border)',
-                    borderRadius: '8px',
+                    borderRadius: '14px',
                     padding: '0 12px',
                     color: 'var(--text-primary)',
                     fontFamily: 'IBM Plex Sans, sans-serif',
                     fontSize: '13px',
                     cursor: 'pointer',
                     outline: 'none',
+                    height: '46px',
                   }}
                 >
                   {LANGUAGES.map(l => (
@@ -409,23 +402,23 @@ export default function Classify() {
                   disabled={downloading}
                   style={{
                     flex: 1,
-                    padding: '13px',
-                    background: 'transparent',
+                    minWidth: '240px',
+                    padding: '14px 16px',
+                    background: downloading ? 'rgba(255,255,255,0.04)' : 'transparent',
                     color: 'var(--accent)',
                     border: '1px solid var(--accent)',
-                    borderRadius: '8px',
+                    borderRadius: '14px',
                     fontFamily: 'IBM Plex Mono, monospace',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    letterSpacing: '0.08em',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
                     cursor: downloading ? 'not-allowed' : 'pointer',
-                    opacity: downloading ? 0.5 : 1,
+                    opacity: downloading ? 0.6 : 1,
                     transition: 'all 0.15s ease',
                   }}
-                  onMouseEnter={e => { if (!downloading) e.target.style.background = 'var(--accent-dim)' }}
-                  onMouseLeave={e => { e.target.style.background = 'transparent' }}
                 >
-                  {downloading ? 'GENERATING...' : '↓ DOWNLOAD COMPLIANCE REPORT'}
+                  {downloading ? 'Generating report...' : 'Download compliance report'}
                 </button>
               </div>
             </div>
