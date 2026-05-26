@@ -31,10 +31,7 @@ export default function Classify() {
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
-  const modeTabs = [
-    { id: 'legacy', label: 'Window 1 Legacy V1 Engine', sub: 'GDPR, risk tiers, and scanners' },
-    { id: 'regulated', label: 'Window 2 Regulated V2 Act', sub: 'EU AI Act 2024 with intended purpose' },
-  ]
+
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -72,23 +69,19 @@ export default function Classify() {
   }
 
   const panel = {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.015), transparent 22%), #101317',
-    border: '1px solid #1f2530',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
     borderRadius: '12px',
-    boxShadow: '0 0 0 1px rgba(255,255,255,0.02) inset',
+    boxShadow: 'var(--shadow-card)',
   }
 
   const fieldBase = {
     width: '100%',
-    background: '#141920',
-    border: '1px solid #232936',
-    borderRadius: '4px',
-    padding: '12px 14px',
+    borderRadius: '8px',
+    padding: '14px 16px',
     color: 'var(--text-primary)',
-    fontFamily: 'IBM Plex Sans, sans-serif',
-    fontSize: '14px',
-    outline: 'none',
-    transition: 'border-color 0.15s ease, background 0.15s ease',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '15px',
   }
 
   const labelStyle = {
@@ -136,32 +129,7 @@ export default function Classify() {
         </p>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-        gap: '10px',
-        marginBottom: '20px',
-      }}>
-        {modeTabs.map((tab, index) => (
-          <div
-            key={tab.id}
-            style={{
-              ...panel,
-              padding: '12px 16px',
-              background: index === 0 ? '#1565d8' : '#0f1318',
-              borderColor: index === 0 ? '#1565d8' : '#202633',
-              color: index === 0 ? '#fff' : 'var(--text-primary)',
-            }}
-          >
-            <div style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '11px', fontWeight: 700, textAlign: 'center' }}>
-              {tab.label}
-            </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: index === 0 ? 0.78 : 0.55, textAlign: 'center', marginTop: '4px' }}>
-              {tab.sub}
-            </div>
-          </div>
-        ))}
-      </div>
+
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.12fr) minmax(300px, 0.78fr)', gap: '16px', alignItems: 'start' }}>
         <div style={{ ...panel, padding: '24px' }}>
@@ -179,30 +147,29 @@ export default function Classify() {
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>System Name</label>
             <input
+              className="premium-input"
               style={fieldBase}
               value={form.system_name}
               onChange={e => set('system_name', e.target.value)}
               placeholder="e.g. CV Screener Pro"
-              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
 
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>System Description</label>
             <textarea
-              style={{ ...fieldBase, height: '104px', resize: 'vertical' }}
+              className="premium-input"
+              style={{ ...fieldBase, height: '120px', resize: 'vertical' }}
               value={form.description}
               onChange={e => set('description', e.target.value)}
               placeholder="Describe what the AI system does, its inputs, and its outputs..."
-              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
 
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>Sector / Application Area</label>
             <select
+              className="premium-input"
               style={{ ...fieldBase, cursor: 'pointer' }}
               value={form.sector}
               onChange={e => set('sector', e.target.value)}
@@ -215,7 +182,7 @@ export default function Classify() {
             </select>
           </div>
 
-          <div style={{ borderTop: '1px solid #232936', paddingTop: '20px', marginBottom: '18px' }}>
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', marginBottom: '18px' }}>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px' }}>
               Capabilities
             </div>
@@ -224,17 +191,14 @@ export default function Classify() {
               { field: 'processes_personal_data', label: 'Processes Personal Data', sub: 'System ingests or analyzes PII, biometrics, or sensitive personal data.' },
               { field: 'interacts_with_humans', label: 'Direct Human Interaction', sub: 'System is a chatbot, virtual assistant, or user-facing application.' },
             ].map(({ field, label }) => (
-              <label key={field} style={{
+              <label key={field} className="premium-tile" data-selected={form[field]} style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
+                gap: '14px',
                 cursor: 'pointer',
-                padding: '10px 12px',
-                background: '#0f1318',
-                border: '1px solid #232936',
-                borderRadius: '4px',
-                transition: 'all 0.15s ease',
-                marginBottom: '10px',
+                padding: '16px',
+                borderRadius: '8px',
+                marginBottom: '12px',
               }}>
                 <input
                   type="checkbox"
@@ -255,26 +219,18 @@ export default function Classify() {
           </div>
 
           <button
+            className="premium-btn"
             onClick={handleSubmit}
             disabled={loading || !form.system_name || !form.description}
             style={{
               width: '100%',
-              padding: '14px 16px',
-              background: loading || !form.system_name || !form.description
-                ? '#1c2128'
-                : '#1d6ef5',
-              color: loading || !form.system_name || !form.description
-                ? 'var(--text-muted)'
-                : '#ffffff',
-              border: 'none',
-              borderRadius: '4px',
-              fontFamily: 'IBM Plex Mono, monospace',
-              fontSize: '11px',
+              padding: '16px',
+              borderRadius: '8px',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px',
               fontWeight: 700,
-              letterSpacing: '0.14em',
+              letterSpacing: '0.04em',
               textTransform: 'uppercase',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.15s ease',
             }}
           >
             {loading ? 'Running assessment...' : 'Run Compliance Check  →'}
@@ -361,7 +317,7 @@ export default function Classify() {
                       padding: '14px',
                       borderRadius: '14px',
                       border: '1px solid var(--border)',
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--bg-elevated)',
                     }}>
                       <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
                         {String(i + 1).padStart(2, '0')}
@@ -404,7 +360,7 @@ export default function Classify() {
                     flex: 1,
                     minWidth: '240px',
                     padding: '14px 16px',
-                    background: downloading ? 'rgba(255,255,255,0.04)' : 'transparent',
+                    background: downloading ? 'var(--bg-elevated)' : 'transparent',
                     color: 'var(--accent)',
                     border: '1px solid var(--accent)',
                     borderRadius: '14px',

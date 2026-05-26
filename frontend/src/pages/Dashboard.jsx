@@ -41,21 +41,16 @@ const CARD_STYLE = {
 }
 
 function HoverCard({ children, onClick, style = {} }) {
-  const [hovered, setHovered] = useState(false)
   return (
     <div
+      className="premium-tile"
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
         ...CARD_STYLE,
         ...style,
-        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
-        boxShadow: hovered
-          ? '0 8px 24px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2)'
-          : '0 1px 3px rgba(0,0,0,0.2)',
-        borderColor: hovered ? 'var(--border-bright)' : 'var(--border)',
         cursor: onClick ? 'pointer' : 'default',
+        padding: '24px',
+        borderRadius: '12px',
       }}
     >
       {children}

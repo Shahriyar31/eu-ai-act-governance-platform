@@ -325,7 +325,8 @@ alembic upgrade head
 uvicorn src.api.main:app --reload --port 8001
 ```
 
-Frontend: `cd frontend && npm install && npm run dev`
+Frontend Dashboard: `cd frontend && npm install && npm run dev`
+Landing Page: `cd landing && npm install && npm run dev`
 
 ---
 
@@ -426,5 +427,7 @@ Built by [Farhan Shahriyar](https://linkedin.com/in/farhanshahriyar) · Hamburg,
 MSc Data Science, TU Hamburg · Werkstudent AI Governance, Nordex Group
 
 *If this platform is useful to your organisation, a ⭐ on GitHub helps others find it.*
+
+<a href="https://www.buymeacoffee.com/farhanshahriyar" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 145px !important;" ></a>
 
 </div>
