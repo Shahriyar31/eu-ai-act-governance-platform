@@ -1206,6 +1206,11 @@ function AppInner() {
                 </div>
               </section>
             </ScrollSkewWrapper>
+            {/* PRICING */}
+            <SectionDivider color="#1d6ef5" />
+            <ScrollSkewWrapper>
+              <PricingSection w={w} />
+            </ScrollSkewWrapper>
           </main>
 
           {/* FOOTER */}
@@ -1221,6 +1226,94 @@ function AppInner() {
         </>
       )}
     </div>
+  )
+}
+
+
+function PricingSection({ w }: { w: number }) {
+  const plans = [
+    { id: "free", name: "Free", price: 0, color: "#64748b", badge: null, assessments: "5 / month",
+      features: ["EU AI Act risk classification", "Basic risk tier output", "5 assessments per month"],
+      cta: "Get Started", href: LIVE + "/register" },
+    { id: "starter", name: "Starter", price: 49, color: "#1d6ef5", badge: null, assessments: "50 / month",
+      features: ["EU AI Act risk classification", "GDPR DPIA generation", "OWASP LLM Top 10 check", "NIST AI RMF mapping", "PDF compliance reports", "Assessment history"],
+      cta: "Start Free Trial", href: LIVE + "/register?plan=starter" },
+    { id: "professional", name: "Professional", price: 149, color: "#8b5cf6", badge: "Most Popular", assessments: "Unlimited",
+      features: ["Everything in Starter", "RAG compliance assistant", "Regulatory monitoring", "LangGraph compliance agent", "Audit trail PDF export", "5 organisation users"],
+      cta: "Start Free Trial", href: LIVE + "/register?plan=professional" },
+    { id: "enterprise", name: "Enterprise", price: 499, color: "#10b981", badge: null, assessments: "Unlimited",
+      features: ["Everything in Professional", "Direct API access", "Custom classification rules", "SLA guarantee", "Unlimited users", "Priority support"],
+      cta: "Contact Us", href: "mailto:shahriyarfarhan3101@outlook.com" },
+  ]
+  return (
+    <section id="pricing" style={{ padding: w < 600 ? "60px 16px 80px" : "80px 56px 120px", maxWidth: 1240, margin: "0 auto" }}>
+      <ClipReveal direction="up">
+        <Meta n="05" label="pricing" />
+        <Words>Simple, transparent pricing</Words>
+        <p style={{ color: "var(--text-secondary)", fontSize: "1.02rem", maxWidth: 480, margin: "16px 0 44px", lineHeight: 1.7 }}>
+          Start free. Upgrade when your team needs more. Every plan includes the core EU AI Act compliance engine.
+        </p>
+      </ClipReveal>
+      <div style={{ display: "grid", gridTemplateColumns: w < 600 ? "1fr" : w < 900 ? "1fr 1fr" : "repeat(4,1fr)", gap: 18 }}>
+        {plans.map((plan, i) => (
+          <motion.div key={plan.id} initial={{ opacity: 0, y: 36 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.1 }}
+            transition={{ delay: i * 0.08, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            style={{ position: "relative" }}>
+            <UnifiedCard color={plan.color} isDeep={true} beam={plan.badge !== null}
+              style={{ padding: "32px 28px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              {plan.badge && (
+                <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
+                  background: plan.color, color: "#fff", fontSize: ".65rem", fontWeight: 700,
+                  fontFamily: "'JetBrains Mono',monospace", padding: "4px 14px", borderRadius: 100,
+                  whiteSpace: "nowrap", letterSpacing: ".06em" }}>
+                  {plan.badge}
+                </div>
+              )}
+              <div>
+                <Pill color={plan.color}>{plan.assessments}</Pill>
+                <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 800, fontSize: "1.1rem",
+                  color: "var(--text-primary)", margin: "14px 0 4px" }}>{plan.name}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 24 }}>
+                  <span style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 800, fontSize: "2.4rem",
+                    color: plan.color, lineHeight: 1 }}>
+                    {plan.price === 0 ? "€0" : "€" + plan.price}
+                  </span>
+                  {plan.price > 0 && (
+                    <span style={{ fontSize: ".8rem", color: "var(--text-secondary)", fontFamily: "'JetBrains Mono',monospace" }}>/mo</span>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+                  {plan.features.map((f, fi) => (
+                    <div key={fi} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <span style={{ width: 16, height: 16, borderRadius: "50%", background: plan.color + "18",
+                        border: "1px solid " + plan.color + "30", display: "flex", alignItems: "center",
+                        justifyContent: "center", fontSize: ".55rem", color: plan.color, flexShrink: 0, marginTop: 2 }}>✓</span>
+                      <span style={{ fontSize: ".82rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Mag>
+                <motion.a href={plan.href} target={plan.id === "enterprise" ? "_self" : "_blank"}
+                  className="nm-button"
+                  style={{ display: "block", textAlign: "center", padding: "12px 20px", borderRadius: 100,
+                    fontSize: ".85rem", textDecoration: "none", fontWeight: 700,
+                    background: plan.badge ? plan.color : "transparent",
+                    color: plan.badge ? "#fff" : plan.color,
+                    border: "1px solid " + plan.color + "40" }}
+                  whileHover={{ scale: 1.03, y: -2 }} transition={{ duration: 0.2 }}>
+                  {plan.cta}
+                </motion.a>
+              </Mag>
+            </UnifiedCard>
+          </motion.div>
+        ))}
+      </div>
+      <p style={{ textAlign: "center", marginTop: 32, fontSize: ".75rem", color: "var(--text-secondary)", fontFamily: "'JetBrains Mono',monospace" }}>
+        // 14-day free trial · No credit card required · Cancel anytime
+      </p>
+    </section>
   )
 }
 

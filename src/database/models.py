@@ -43,7 +43,12 @@ class Organisation(Base):
     plan = Column(String, default="free", nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    subscription_tier = Column(String(50), default="free", nullable=False)
+    stripe_customer_id = Column(String(255), nullable=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
+    subscription_status = Column(String(50), default="active", nullable=False)
+    assessment_count_this_month = Column(Integer, default=0, nullable=False)
+    assessment_reset_date = Column(DateTime(timezone=True), nullable=True)
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)

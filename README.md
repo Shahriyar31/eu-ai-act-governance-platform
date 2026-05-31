@@ -21,7 +21,7 @@
 [![Sentry](https://img.shields.io/badge/Sentry-362D59?style=flat-square&logo=sentry&logoColor=white)](https://sentry.io)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare_AI_Gateway-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/ai-gateway)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/features/actions)
-[![MIT License](https://img.shields.io/badge/License-MIT-10b981?style=flat-square)](LICENSE)
+[![Proprietary License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](LICENSE)
 
 </div>
 
@@ -417,7 +417,9 @@ eu-ai-act-governance-platform/
 
 ## License
 
-MIT — free to use, modify, and distribute.
+**Copyright © 2026 Farhan Shahriyar. All Rights Reserved.**
+
+This project is proprietary. You may view the code on GitHub, but you may not copy, modify, distribute, or use this software (for commercial or non-commercial purposes) without explicit written consent from the author.
 
 ---
 

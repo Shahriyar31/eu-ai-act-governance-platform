@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts'
-import { listRules, getHistory } from '../api/client'
+import api, { listRules, getHistory } from '../api/client'
 import RiskBadge from '../components/RiskBadge'
 
 function AnimatedCounter({ target, duration = 1200 }) {
@@ -63,8 +63,13 @@ export default function Dashboard() {
   const [ruleCount, setRuleCount] = useState(0)
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
+  const [subscription, setSubscription] = useState(null)
 
   useEffect(() => {
+    api.get('/billing/subscription')
+      .then(res => setSubscription(res.data))
+      .catch(() => {})
+
     Promise.all([listRules(), getHistory()])
       .then(([rulesRes, historyRes]) => {
         setRuleCount(rulesRes.data.length)
@@ -107,6 +112,50 @@ export default function Dashboard() {
 
   return (
     <div style={{ animation: 'slideUp 0.4s ease forwards' }}>
+      {subscription && subscription.tier === 'free' && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(29,110,245,0.08), rgba(139,92,246,0.08))',
+          border: '1px solid rgba(29,110,245,0.2)',
+          borderRadius: '12px',
+          padding: '16px 24px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+              Free plan — {subscription.assessments_used}/{subscription.assessments_limit} assessments used this month
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'IBM Plex Mono, monospace' }}>
+              Upgrade to Starter for 50 assessments/month + DPIA, PDF reports, and more
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              const res = await api.post('/billing/create-checkout-session', { plan: 'starter' })
+              if (res.data.checkout_url) window.location.href = res.data.checkout_url
+            }}
+            style={{
+              background: '#1d6ef5',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '100px',
+              padding: '10px 24px',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            Upgrade to Starter →
+          </button>
+        </div>
+      )}
+
       <div style={{ marginBottom: '32px' }}>
         <div style={{
           fontFamily: 'IBM Plex Mono, monospace',
