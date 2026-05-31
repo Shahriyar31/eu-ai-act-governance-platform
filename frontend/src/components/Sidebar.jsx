@@ -8,6 +8,7 @@ const links = [
   { to: '/classify', label: 'Classify', icon: '⬡' },
   { to: '/assistant', label: 'AI Assistant', icon: '◎' },
   { to: '/history', label: 'History', icon: '◷' },
+  { to: '/agent', label: 'Agent', icon: '◈' },
   { to: '/admin', label: 'Rules', icon: '◆' },
 ]
 
