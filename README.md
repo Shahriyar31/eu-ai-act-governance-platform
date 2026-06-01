@@ -430,6 +430,6 @@ MSc Data Science, TU Hamburg · Werkstudent AI Governance, Nordex Group
 
 *If this platform is useful to your organisation, a ⭐ on GitHub helps others find it.*
 
-<a href="https://www.buymeacoffee.com/farhanshahriyar" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 145px !important;" ></a>
+<a href="https://www.buymeacoffee.com/shahriyarfarhan" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 145px !important;" ></a>
 
 </div>
