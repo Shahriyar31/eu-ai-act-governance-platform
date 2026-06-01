@@ -6,7 +6,7 @@
 
 **An open-source, production-grade AI compliance platform that automates EU AI Act (Regulation EU 2024/1689), GDPR, and NIST AI RMF compliance — end to end.**
 
-[**Live Platform →**](https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io) · [API Docs](https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io/docs) · [Report Bug](https://github.com/Shahriyar31/eu-ai-act-governance-platform/issues)
+[**Landing Page →**](https://eu-ai-act-governance-platform.vercel.app) · [**Live Platform →**](https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io) · [API Docs](https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io/docs) · [Report Bug](https://github.com/Shahriyar31/eu-ai-act-governance-platform/issues)
 
 ---
 
@@ -18,10 +18,12 @@
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
 [![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=flat-square&logo=terraform&logoColor=white)](https://www.terraform.io)
 [![Azure](https://img.shields.io/badge/Azure_Container_Apps-0089D6?style=flat-square&logo=microsoftazure&logoColor=white)](https://azure.microsoft.com)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://vercel.com)
+[![Stripe](https://img.shields.io/badge/Stripe-635BFF?style=flat-square&logo=stripe&logoColor=white)](https://stripe.com)
 [![Sentry](https://img.shields.io/badge/Sentry-362D59?style=flat-square&logo=sentry&logoColor=white)](https://sentry.io)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare_AI_Gateway-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/ai-gateway)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/features/actions)
-[![Proprietary License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](LICENSE)
 
 </div>
 
@@ -32,6 +34,16 @@
 Organisations deploying AI systems inside the EU face a hard compliance deadline. The EU AI Act requires risk classification, documentation, and impact assessments before deployment — but the process is manual, slow, and expensive. Legal teams charge thousands per assessment. Engineers have no tooling.
 
 Argus AI makes compliance a first-class engineering concern: automated, auditable, observable, and integrated directly into the development pipeline.
+
+---
+
+## Live URLs
+
+| Environment | URL |
+|---|---|
+| **Landing Page** | https://eu-ai-act-governance-platform.vercel.app |
+| **Platform Dashboard** | https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io |
+| **API Documentation** | https://eu-ai-governance.salmonocean-15ddaf55.germanywestcentral.azurecontainerapps.io/docs |
 
 ---
 
@@ -65,11 +77,26 @@ Submit an AI system description and technical characteristics. The platform retu
 
 | Feature | Details |
 |---|---|
-| **Regulatory Change Monitoring** | Monitors EUR-Lex, EU AI Office, and EU AI Act Reference Portal via Firecrawl. Detects changes via SHA-256 content hashing. Auto-updates knowledge base and emails org admins via Resend |
-| **Audit Trail PDF Export** | SHA-256 hash-chained audit ledger. Every classification writes a tamper-evident record. Export as PDF for regulatory authorities |
+| **Human-in-the-Loop Agent** | LangGraph interrupt() pauses the agent mid-assessment for HIGH/LIMITED risk systems. Asks targeted clarifying questions. Resumes with full context after user responds |
+| **Subscription Billing** | Stripe-powered subscription tiers — Free, Starter (€49/mo), Professional (€149/mo), Enterprise (€499/mo). Webhook-driven tier updates. Currently in free beta |
 | **Multi-tenancy** | Organisation model with slug, plan, and role-based access. Full org isolation on assessment history and classifications |
+| **Regulatory Change Monitoring** | Monitors EUR-Lex, EU AI Office, and EU AI Act Reference Portal. Detects changes via SHA-256 content hashing. Auto-updates knowledge base and emails org admins via Resend |
+| **Audit Trail PDF Export** | SHA-256 hash-chained audit ledger. Every classification writes a tamper-evident record. Export as PDF for regulatory authorities |
 | **JWT Authentication** | Access tokens (15 min) + refresh tokens (7 days) with rotation and revocation. Rate limiting via SlowAPI |
 | **Sentry Monitoring** | Production error tracking with full tracebacks, performance tracing at 10% sample rate |
+
+---
+
+## Pricing
+
+| Plan | Price | Assessments | Features |
+|---|---|---|---|
+| **Free** | €0 | 5 / month | EU AI Act risk classification |
+| **Starter** | €49 / month | 50 / month | + DPIA, OWASP, NIST, PDF reports, History |
+| **Professional** | €149 / month | Unlimited | + RAG Assistant, Regulatory Monitor, 5 users |
+| **Enterprise** | €499 / month | Unlimited | + API access, Custom rules, SLA, Unlimited users |
+
+*Currently in free beta. Register at the live platform to get started.*
 
 ---
 
@@ -79,12 +106,13 @@ Submit an AI system description and technical characteristics. The platform retu
 ┌──────────────────────────────────────────────────────────────────────┐
 │                         Internet Boundary                            │
 │                                                                      │
+│   Landing Page (Vercel CDN — eu-ai-act-governance-platform.vercel.app)│
 │   Browser / API Client                                               │
 │        │                                                             │
 │        ▼                                                             │
 │   Azure Container Apps (HTTPS, TLS termination, germanywestcentral)  │
 │   ┌──────────────────────────────────────────────────────────────┐   │
-│   │  React Frontend (Vite + Framer Motion)                       │   │
+│   │  React Frontend (Vite + Tailwind)                            │   │
 │   │  FastAPI Backend (Python 3.11)                               │   │
 │   │    ├── /api/v1/classify          EU AI Act risk classifier   │   │
 │   │    ├── /api/v1/dpia              DPIA generator              │   │
@@ -98,6 +126,7 @@ Submit an AI system description and technical characteristics. The platform retu
 │   │    ├── /api/v1/monitoring/check  Regulatory change check     │   │
 │   │    ├── /api/v1/audit/export      Tamper-evident PDF export   │   │
 │   │    ├── /auth/*                   JWT auth + refresh + logout │   │
+│   │    ├── /billing/*                Stripe checkout + webhooks  │   │
 │   │    └── /metrics                  Prometheus scrape endpoint  │   │
 │   └──────────────────────────────────────────────────────────────┘   │
 │                │                                                      │
@@ -108,14 +137,18 @@ Submit an AI system description and technical characteristics. The platform retu
 │   │  (caching + limits) │    │  Groq llama-3.1-8b (fallback)      │  │
 │   └─────────────────────┘    └────────────────────────────────────┘  │
 │                                                                      │
+│   Stripe API (subscription billing + webhook events)                 │
+│   EUR-Lex + Resend API (regulatory monitoring + email alerts)        │
+│                                                                      │
 │   Azure Database for PostgreSQL (germanywestcentral)                 │
 │   ├── classification_rules   41 live EU AI Act rules                 │
 │   ├── chunk_embeddings       665+ pgvector chunks (384-dim)          │
 │   ├── audit_ledger           SHA-256 hash-chained records            │
 │   ├── assessment_history     org-isolated history                    │
+│   ├── organisations          multi-tenant with subscription tiers    │
 │   ├── monitoring_sources     EUR-Lex, EU AI Office, etc.             │
 │   ├── regulatory_updates     detected change records                 │
-│   └── organisations + users + refresh_tokens                         │
+│   └── users + refresh_tokens                                         │
 │                                                                      │
 │   Prometheus + Sentry ──▶ Grafana Observability Dashboard            │
 │   Azure Container Registry · Azure Key Vault · Azure Storage         │
@@ -254,6 +287,7 @@ All resources provisioned via Terraform with remote state in Azure Blob Storage.
 | Azure Container Registry | Docker image storage |
 | Azure Key Vault | Secrets management |
 | Azure Storage | Terraform state backend (versioned) |
+| Vercel | Landing page CDN hosting |
 
 **Region:** `germanywestcentral` (Frankfurt) — GDPR/BDSG alignment, EU data residency.
 
@@ -267,14 +301,17 @@ All resources provisioned via Terraform with remote state in Azure Blob Storage.
 | **AI / LLM** | LangChain, LangGraph, Groq API, Gemini API, fastembed |
 | **Vector DB** | PostgreSQL + pgvector (384-dimensional, 665+ chunks) |
 | **RAG Evaluation** | RAGAS 0.2.15 |
-| **Frontend** | React 18, Vite, Framer Motion, Lenis |
+| **Frontend** | React 18, Vite, Framer Motion, Lenis, Tailwind CSS |
+| **Landing Page** | React 18, Vite, Framer Motion, Lenis (hosted on Vercel) |
 | **Auth** | JWT (access + refresh tokens), bcrypt, SlowAPI |
+| **Billing** | Stripe (checkout, webhooks, subscription tier enforcement) |
 | **PDF Generation** | ReportLab |
 | **Regulatory Monitoring** | Firecrawl, Resend |
 | **Error Monitoring** | Sentry SDK (FastAPI integration) |
 | **AI Gateway** | Cloudflare AI Gateway |
 | **Observability** | Prometheus, Grafana, python-json-logger |
 | **Infrastructure** | Terraform, Azure Container Apps, Azure PostgreSQL, ACR, Key Vault |
+| **CDN** | Vercel (landing page global edge network) |
 | **CI/CD** | GitHub Actions (5-stage pipeline) |
 | **Security Scanning** | Bandit, Semgrep, pip-audit, Syft, Grype, Trivy |
 | **Containerisation** | Docker (python:3.11-slim, layer-cache optimised) |
@@ -316,6 +353,13 @@ RESEND_API_KEY=your_resend_api_key
 NOTIFICATION_EMAIL=your_email@example.com
 
 SENTRY_DSN=your_sentry_dsn
+
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+STRIPE_STARTER_PRICE_ID=price_your_starter_price_id
+STRIPE_PROFESSIONAL_PRICE_ID=price_your_professional_price_id
+STRIPE_ENTERPRISE_PRICE_ID=price_your_enterprise_price_id
+APP_URL=http://localhost:5173
 ```
 
 ```bash
@@ -325,8 +369,27 @@ alembic upgrade head
 uvicorn src.api.main:app --reload --port 8001
 ```
 
-Frontend Dashboard: `cd frontend && npm install && npm run dev`
-Landing Page: `cd landing && npm install && npm run dev`
+**Terminal 1 — Backend:**
+```bash
+uvicorn src.api.main:app --reload --port 8001
+```
+
+**Terminal 2 — Dashboard Frontend:**
+```bash
+cd frontend && npm install && npm run dev
+# Opens at http://localhost:5173
+```
+
+**Terminal 3 — Landing Page:**
+```bash
+cd landing && npm install && npm run dev -- --port 3000
+# Opens at http://localhost:3000
+```
+
+**Terminal 4 — Stripe Webhooks (local testing):**
+```bash
+stripe listen --forward-to localhost:8001/billing/webhook
+```
 
 ---
 
@@ -338,14 +401,15 @@ eu-ai-act-governance-platform/
 ├── alembic/versions/       Database migrations
 ├── docker/Dockerfile       python:3.11-slim, layer-cache optimised
 ├── docs/                   Architecture, ADRs, threat model
-├── frontend/               React dashboard (Vite)
-├── landing/                Argus AI landing page (React + Framer Motion + Lenis)
+├── frontend/               React dashboard (Vite + Tailwind)
+├── landing/                Landing page (React + Framer Motion + Lenis)
+│                           Deployed to Vercel CDN
 ├── monitoring/
 │   ├── prometheus/         Custom Prometheus image + config
 │   └── grafana/            Custom Grafana image + dashboard JSON
 ├── src/
 │   ├── api/main.py         FastAPI app, lifespan, router registration
-│   ├── routers/            governance, ai, agent, monitoring, auth, admin
+│   ├── routers/            governance, ai, agent, monitoring, auth, admin, billing
 │   ├── ai/                 llm_factory.py, rag_engine.py
 │   ├── agents/             LangGraph StateGraph with human-in-the-loop
 │   ├── governance/         classifier, dpia, owasp, nist, nvd, atlas, pdf
@@ -373,7 +437,7 @@ eu-ai-act-governance-platform/
 | POST | `/api/v1/atlas-check` | MITRE ATLAS threat assessment |
 | POST | `/api/v1/assess-and-download` | Full compliance PDF report |
 | POST | `/api/v1/ai/ask` | RAG compliance assistant |
-| POST | `/api/v1/agent/assess` | LangGraph agent (async for HIGH/LIMITED) |
+| POST | `/api/v1/agent/assess` | LangGraph agent (pauses for HIGH/LIMITED) |
 | POST | `/api/v1/agent/assess/respond` | Resume after human review |
 | POST | `/api/v1/monitoring/check` | Trigger regulatory source check |
 | GET | `/api/v1/monitoring/sources` | List monitored sources |
@@ -383,6 +447,11 @@ eu-ai-act-governance-platform/
 | POST | `/auth/login` | JWT login |
 | POST | `/auth/refresh` | Rotate access token |
 | POST | `/auth/logout` | Revoke refresh token |
+| GET | `/billing/plans` | Available subscription plans |
+| POST | `/billing/create-checkout-session` | Stripe checkout session |
+| POST | `/billing/create-portal-session` | Stripe customer portal |
+| GET | `/billing/subscription` | Current subscription status |
+| POST | `/billing/webhook` | Stripe webhook handler |
 | GET | `/health` | Health check |
 | GET | `/metrics` | Prometheus metrics |
 
@@ -397,6 +466,7 @@ eu-ai-act-governance-platform/
 - TLS enforced at Azure Container Apps ingress
 - Rate limiting on all auth endpoints via SlowAPI
 - All LLM traffic proxied through Cloudflare AI Gateway
+- Stripe webhook signature verification on all billing events
 
 ---
 
@@ -425,7 +495,7 @@ This project is proprietary. You may view the code on GitHub, but you may not co
 
 <div align="center">
 
-Built by [Farhan Shahriyar](https://linkedin.com/in/farhanshahriyar) · Hamburg, Germany  
+Built by [Farhan Shahriyar](https://linkedin.com/in/farhanshahriyar) · Hamburg, Germany
 MSc Data Science, TU Hamburg · Werkstudent AI Governance, Nordex Group
 
 *If this platform is useful to your organisation, a ⭐ on GitHub helps others find it.*
