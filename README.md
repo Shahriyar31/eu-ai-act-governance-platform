@@ -496,7 +496,7 @@ This project is proprietary. You may view the code on GitHub, but you may not co
 <div align="center">
 
 Built by [Farhan Shahriyar](https://linkedin.com/in/farhanshahriyar) · Hamburg, Germany
-MSc Data Science, TU Hamburg · Werkstudent AI Governance, Nordex Group
+MSc Data Science, TU Hamburg · Werkstudent, Nordex Group
 
 *If this platform is useful to your organisation, a ⭐ on GitHub helps others find it.*
 
